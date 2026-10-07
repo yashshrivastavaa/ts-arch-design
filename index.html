@@ -3,769 +3,490 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TradeStation — n8n Credential Broker Architecture</title>
+<title>TradeStation · n8n Credential Broker Architecture · Symplytics</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif;color:#e2e8f0;overflow-x:hidden}
 
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#020817;
-  --teal:#00d4b8;--teal-dim:rgba(0,212,184,.15);--teal-glow:rgba(0,212,184,.3);
-  --indigo:#6366f1;--indigo-dim:rgba(99,102,241,.15);--indigo-glow:rgba(99,102,241,.35);
-  --purple:#a855f7;--purple-dim:rgba(168,85,247,.15);
-  --green:#10b981;--green-dim:rgba(16,185,129,.12);
-  --blue:#3b82f6;--blue-dim:rgba(59,130,246,.12);
-  --amber:#f59e0b;--amber-dim:rgba(245,158,11,.12);
-  --red:#ef4444;--red-dim:rgba(239,68,68,.12);
-  --text:#f1f5f9;--muted:#64748b;--dim:#1e293b;
-}
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 28px 14px;background:rgba(255,255,255,.025);border-bottom:1px solid rgba(255,255,255,.07);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.hdr-logo img{height:30px;filter:brightness(1.15)}
+.hdr-center h1{font-size:18px;font-weight:800;letter-spacing:-.025em;text-align:center;background:linear-gradient(90deg,#60a5fa,#a78bfa,#34d399,#60a5fa);background-size:300% auto;animation:grad 5s linear infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+@keyframes grad{to{background-position:300% center}}
+.hdr-center p{font-size:9.5px;color:rgba(255,255,255,.3);text-align:center;letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.badge-conf{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:4px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+.badge-date{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.04em}
 
-body{
-  background:var(--bg);color:var(--text);
-  font-family:'Inter',system-ui,sans-serif;
-  height:100vh;width:100vw;overflow:hidden;
-  display:flex;flex-direction:column;
-}
+/* ── NAV BAR ── */
+.wt-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 28px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06)}
+.wt-btn{background:linear-gradient(135deg,#3b82f6,#7c3aed);color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:11.5px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.wt-btn:hover{opacity:.85;transform:translateY(-1px)}
+.wt-btn:disabled{opacity:.35;cursor:default;transform:none}
+.wt-btn.sec{background:rgba(255,255,255,.07);color:rgba(255,255,255,.65)}
+.wt-btn.sec:hover{background:rgba(255,255,255,.12)}
+.dots-row{display:flex;gap:5px;align-items:center;flex:1;flex-wrap:wrap;justify-content:center}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.13);cursor:pointer;transition:all .25s;flex-shrink:0}
+.dot:hover{background:rgba(255,255,255,.3)}
+.dot.act{background:#60a5fa;transform:scale(1.5);box-shadow:0 0 8px rgba(96,165,250,.5)}
+.dot.done{background:rgba(96,165,250,.35)}
+.wt-right{display:flex;align-items:center;gap:8px;font-size:10px;color:rgba(255,255,255,.3);white-space:nowrap}
+.vpulse{width:7px;height:7px;border-radius:50%;background:#34d399;opacity:0;transition:opacity .3s}
+.vpulse.on{opacity:1;animation:vpulse 1s ease-in-out infinite}
+@keyframes vpulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.6);opacity:1}}
 
-/* ═══════════════════════════════════════════
-   ANIMATED BACKGROUND
-═══════════════════════════════════════════ */
-#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+/* ── STEP PANEL ── */
+.step-panel{padding:10px 28px;background:rgba(96,165,250,.05);border-bottom:1px solid rgba(96,165,250,.1);min-height:54px;transition:opacity .3s,min-height .3s}
+.step-panel.hidden{opacity:0;pointer-events:none;min-height:0;padding:0;border:none}
+.sp-name{font-size:12px;font-weight:700;color:#93c5fd;margin-bottom:3px}
+.sp-text{font-size:10.5px;line-height:1.65;color:rgba(255,255,255,.55);max-width:1060px}
 
-/* ═══════════════════════════════════════════
-   HEADER
-═══════════════════════════════════════════ */
-#hdr{
-  position:relative;z-index:10;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 24px;
-  background:rgba(2,8,23,.8);
-  backdrop-filter:blur(20px);
-  border-bottom:1px solid rgba(99,102,241,.2);
-  flex-shrink:0;
-}
-#hdr::after{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(99,102,241,.6),rgba(0,212,184,.6),transparent);
-}
-.logo-wrap{display:flex;align-items:center;gap:10px}
-.logo-mark{
-  width:36px;height:36px;border-radius:10px;
-  background:linear-gradient(135deg,var(--indigo),var(--teal));
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;font-weight:900;color:#fff;letter-spacing:-.5px;
-  box-shadow:0 0 16px rgba(99,102,241,.5);
-}
-.logo-text{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em}
-#hdr-title{text-align:center}
-#hdr-title h1{
-  font-size:17px;font-weight:800;letter-spacing:.02em;
-  background:linear-gradient(135deg,#fff 30%,var(--teal));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-#hdr-title p{font-size:9.5px;color:var(--muted);margin-top:3px;letter-spacing:.1em;text-transform:uppercase}
-.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
-.conf-badge{
-  background:linear-gradient(135deg,#92400e,#d97706);
-  color:#fff;font-size:9px;font-weight:800;padding:4px 10px;
-  border-radius:6px;letter-spacing:.1em;
-  box-shadow:0 0 12px rgba(245,158,11,.35);
-}
-.engage-info{font-size:9px;color:var(--muted)}
+/* ── CANVAS ── */
+.outer{width:100%;overflow:hidden;background:#070c18}
+.canvas-wrap{position:relative;width:1380px;height:980px;transform-origin:top left}
 
-/* ═══════════════════════════════════════════
-   NAV BAR
-═══════════════════════════════════════════ */
-#nav{
-  position:relative;z-index:10;
-  display:flex;align-items:center;gap:8px;
-  padding:8px 24px;
-  background:rgba(2,8,23,.7);
-  backdrop-filter:blur(16px);
-  border-bottom:1px solid rgba(30,41,59,.8);
-  flex-shrink:0;
-}
-#btn-start{
-  background:linear-gradient(135deg,#4f46e5,#7c3aed);
-  color:#fff;border:none;padding:7px 16px;border-radius:8px;
-  font-size:12px;font-weight:700;cursor:pointer;
-  display:flex;align-items:center;gap:6px;white-space:nowrap;
-  box-shadow:0 0 20px rgba(99,102,241,.4);
-  transition:all .25s;font-family:'Inter',sans-serif;
-}
-#btn-start:hover{box-shadow:0 0 28px rgba(99,102,241,.7);transform:translateY(-1px)}
-.nav-btn{
-  background:rgba(30,41,59,.7);color:var(--muted);
-  border:1px solid rgba(51,65,85,.7);padding:6px 12px;
-  border-radius:7px;font-size:11px;cursor:pointer;
-  transition:all .2s;font-family:'Inter',sans-serif;
-}
-.nav-btn:hover:not(:disabled){color:var(--text);border-color:rgba(99,102,241,.5);background:rgba(99,102,241,.1)}
-.nav-btn:disabled{opacity:.3;cursor:not-allowed}
-#dots{display:flex;gap:7px;margin:0 auto;align-items:center}
-.dot{
-  width:7px;height:7px;border-radius:50%;background:rgba(51,65,85,.9);
-  cursor:pointer;transition:all .3s;
-}
-.dot.active{
-  background:var(--indigo);width:22px;border-radius:4px;
-  box-shadow:0 0 10px rgba(99,102,241,.7);
-}
-#voice-ind{
-  display:flex;align-items:center;gap:7px;
-  font-size:10px;color:var(--muted);white-space:nowrap;
-  background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);
-  padding:5px 10px;border-radius:20px;
-}
-.vdot{width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e}
-.playing .vdot{animation:vpulse 1s ease-in-out infinite}
-@keyframes vpulse{0%,100%{box-shadow:0 0 6px #22c55e}50%{box-shadow:0 0 14px #22c55e,0 0 24px rgba(34,197,94,.4)}}
+/* Zone backgrounds */
+.z{position:absolute;border-radius:18px;pointer-events:none;z-index:1}
+.z-eks{left:28px;top:120px;width:694px;height:754px;background:rgba(59,130,246,.035);border:1px solid rgba(59,130,246,.13)}
+.z-aws{left:752px;top:120px;width:278px;height:754px;background:rgba(245,158,11,.035);border:1px solid rgba(245,158,11,.13)}
+.z-tgt{left:1060px;top:120px;width:300px;height:754px;background:rgba(52,211,153,.035);border:1px solid rgba(52,211,153,.12)}
+.z-n8n{left:52px;top:158px;width:248px;height:642px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:14px}
 
-/* ═══════════════════════════════════════════
-   MAIN
-═══════════════════════════════════════════ */
-#main{flex:1;position:relative;overflow:hidden}
-#diagram{
-  position:absolute;top:50%;left:50%;
-  transform:translate(-50%,-50%);transform-origin:center center;
-  width:1340px;height:690px;
-  display:grid;grid-template-columns:226px 288px 286px 220px;
-  gap:14px;align-items:center;
-}
+/* Zone labels */
+.zl{position:absolute;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:5px;pointer-events:none;z-index:6}
+.zl-eks{left:44px;top:128px;color:#60a5fa;background:rgba(59,130,246,.1)}
+.zl-aws{left:768px;top:128px;color:#f59e0b;background:rgba(245,158,11,.1)}
+.zl-tgt{left:1076px;top:128px;color:#34d399;background:rgba(52,211,153,.1)}
+.zl-n8n{left:68px;top:167px;color:#94a3b8;background:rgba(255,255,255,.05)}
 
-/* ═══════════════════════════════════════════
-   GLASS CARD BASE
-═══════════════════════════════════════════ */
-.glass{
-  background:rgba(15,23,42,.75);
-  backdrop-filter:blur(20px);
-  border-radius:14px;border:1px solid rgba(51,65,85,.6);
-  transition:all .45s cubic-bezier(.4,0,.2,1);
-  position:relative;overflow:hidden;
-}
-.glass::before{
-  content:'';position:absolute;inset:0;border-radius:14px;
-  background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 60%);
-  pointer-events:none;
-}
+/* ── CARD BASE ── */
+.c{position:absolute;border-radius:11px;padding:12px 14px;z-index:4;cursor:default;transition:transform .25s,opacity .35s,box-shadow .3s,filter .35s}
+.c:hover{transform:translateY(-2px)!important;z-index:7}
+.ct{font-size:12px;font-weight:700;display:block;margin-bottom:4px}
+.cs{font-size:10px;line-height:1.55;opacity:.78;display:block}
 
-/* ═══════════════════════════════════════════
-   COLUMN 1
-═══════════════════════════════════════════ */
-#col1{display:flex;flex-direction:column;gap:10px;height:690px}
+/* ── HIGHLIGHT VARIANTS ── */
+.c.hl     {box-shadow:0 0 0 2px rgba(96,165,250,.55),0 0 28px rgba(96,165,250,.28)!important;transform:translateY(-2px) scale(1.02)!important;z-index:7!important}
+.c.hl-warm{box-shadow:0 0 0 2px rgba(251,146,60,.6),0 0 28px rgba(251,146,60,.28)!important;transform:translateY(-2px) scale(1.02)!important;z-index:7!important}
+.c.hl-green{box-shadow:0 0 0 2px rgba(52,211,153,.6),0 0 28px rgba(52,211,153,.28)!important;transform:translateY(-2px) scale(1.02)!important;z-index:7!important}
+.c.hl-purple{box-shadow:0 0 0 2px rgba(167,139,250,.6),0 0 28px rgba(167,139,250,.28)!important;transform:translateY(-2px) scale(1.02)!important;z-index:7!important}
+.c.hl-violet{box-shadow:0 0 0 2px rgba(192,72,216,.65),0 0 28px rgba(192,72,216,.3)!important;transform:translateY(-2px) scale(1.02)!important;z-index:7!important}
+.c.hl-red  {box-shadow:0 0 0 2px rgba(239,68,68,.6),0 0 28px rgba(239,68,68,.28)!important;transform:translateY(-2px) scale(1.02)!important;z-index:7!important}
+.c.dim{opacity:.15!important;filter:saturate(.2) brightness(.6);transform:none!important}
 
-.idp-card{padding:13px 14px}
-.idp-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  padding:3px 8px;border-radius:20px;margin-bottom:8px;
-}
-.idp-badge.entra{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.25)}
-.idp-badge.cognito{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.25)}
-.idp-title{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:4px}
-.idp-sub{font-size:10px;color:var(--muted);line-height:1.7}
+/* ── SPECIFIC CARDS ── */
+.c-entra{left:60px;top:28px;width:214px;height:80px;background:rgba(59,130,246,.12);border:1px solid rgba(96,165,250,.28);color:#bfdbfe}
+.c-cog  {left:318px;top:28px;width:214px;height:80px;background:rgba(245,158,11,.1);border:1px solid rgba(251,191,36,.28);color:#fde68a}
 
-/* EKS cluster */
-.eks-wrap{
-  flex:1;border-radius:14px;padding:12px;
-  border:1.5px dashed rgba(0,212,184,.3);
-  background:rgba(0,212,184,.03);
-  position:relative;display:flex;flex-direction:column;gap:8px;
-}
-.eks-label{
-  position:absolute;top:-9px;left:14px;
-  font-size:8.5px;font-weight:800;letter-spacing:.12em;color:var(--teal);
-  background:var(--bg);padding:0 8px;
-}
-.wf-box{
-  flex:1;border:1px dashed rgba(51,65,85,.7);border-radius:10px;
-  padding:8px;display:flex;flex-direction:column;gap:5px;
-  position:relative;margin-top:6px;
-}
-.wf-box-label{
-  position:absolute;top:-7px;left:10px;
-  font-size:8px;font-weight:700;letter-spacing:.1em;color:var(--muted);
-  background:var(--bg);padding:0 6px;
-}
-.wf{
-  border-radius:8px;padding:8px 10px;
-  display:flex;flex-direction:column;gap:2px;
-  transition:all .4s cubic-bezier(.4,0,.2,1);
-  position:relative;cursor:default;
-  border:1px solid transparent;
-}
-.wf-name{font-size:11px;font-weight:700}
-.wf-desc{font-size:9px;color:var(--muted)}
-.wf-jwt{
-  position:absolute;right:8px;top:50%;transform:translateY(-50%);
-  font-size:8px;font-weight:700;
-  font-family:'JetBrains Mono',monospace;
-  padding:2px 6px;border-radius:4px;
-}
-.wf.slack{background:rgba(168,85,247,.12);border-color:rgba(168,85,247,.25)}
-.wf.slack .wf-name{color:#c084fc}
-.wf.slack .wf-jwt{background:rgba(168,85,247,.2);color:#c084fc}
-.wf.snow{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25)}
-.wf.snow .wf-name{color:#34d399}
-.wf.snow .wf-jwt{background:rgba(16,185,129,.2);color:#34d399}
-.wf.jira{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.25)}
-.wf.jira .wf-name{color:#60a5fa}
-.wf.jira .wf-jwt{background:rgba(59,130,246,.2);color:#60a5fa}
-.wf.sp{background:rgba(30,64,175,.15);border-color:rgba(30,64,175,.35)}
-.wf.sp .wf-name{color:#93c5fd}
-.wf.sp .wf-jwt{background:rgba(30,64,175,.25);color:#93c5fd}
-.wf.future{background:transparent;border:1px dashed rgba(51,65,85,.5)}
-.wf.future .wf-name{color:rgba(51,65,85,.9);font-style:italic;font-size:10px}
+.c-wf{width:206px;height:62px;left:68px}
+.c-wf-slack{top:202px;background:rgba(74,21,75,.65);border:1px solid rgba(192,72,216,.35);color:#e9b5ec}
+.c-wf-snow {top:286px;background:rgba(6,95,70,.6); border:1px solid rgba(52,211,153,.3); color:#6ee7b7}
+.c-wf-jira {top:370px;background:rgba(29,78,216,.5);border:1px solid rgba(96,165,250,.32);color:#93c5fd}
+.c-wf-sp   {top:454px;background:rgba(3,105,161,.5);border:1px solid rgba(56,189,248,.28);color:#bae6fd}
 
-.no-creds{
-  background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);
-  border-radius:8px;padding:7px 10px;font-size:9.5px;color:#fcd34d;
-  display:flex;align-items:center;gap:6px;
-}
-.no-creds::before{content:'🔒';font-size:12px}
+.wf-fut{position:absolute;left:68px;top:538px;width:206px;height:40px;z-index:4;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.12);color:#4b5563;font-style:italic;font-size:10.5px;border-radius:10px;display:flex;align-items:center;justify-content:center;transition:opacity .35s,filter .35s}
+.wf-fut.dim{opacity:.15;filter:saturate(.2) brightness(.6)}
 
-/* ═══════════════════════════════════════════
-   COLUMN 2 — BROKER
-═══════════════════════════════════════════ */
-#col2{display:flex;flex-direction:column;height:690px;justify-content:center}
-.broker-card{padding:22px 20px}
-.broker-header{
-  display:flex;align-items:center;gap:10px;margin-bottom:18px;
-  padding-bottom:14px;border-bottom:1px solid rgba(51,65,85,.5);
-}
-.broker-icon{
-  width:36px;height:36px;border-radius:10px;flex-shrink:0;
-  background:linear-gradient(135deg,var(--indigo),#818cf8);
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;box-shadow:0 0 16px rgba(99,102,241,.4);
-}
-.broker-title{font-size:15px;font-weight:800;color:var(--text)}
-.broker-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.no-creds{position:absolute;left:64px;top:594px;width:212px;height:52px;z-index:4;background:rgba(146,64,14,.1);border:1px solid rgba(217,119,6,.28);color:#fcd34d;font-size:10px;border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.5;transition:opacity .35s,filter .35s,box-shadow .3s,transform .25s}
+.no-creds.hl-warm{box-shadow:0 0 0 2px rgba(251,146,60,.5),0 0 20px rgba(251,146,60,.2)!important;transform:scale(1.02)}
+.no-creds.dim{opacity:.15;filter:saturate(.2) brightness(.6)}
 
-.bs{
-  display:flex;align-items:flex-start;gap:10px;
-  padding:10px 11px;border-radius:10px;margin-bottom:6px;
-  transition:all .4s cubic-bezier(.4,0,.2,1);
-  border:1px solid transparent;cursor:default;
-}
-.bs:last-of-type{margin-bottom:0}
-.bs-num{
-  width:22px;height:22px;border-radius:8px;flex-shrink:0;
-  background:rgba(51,65,85,.6);border:1px solid rgba(51,65,85,.8);
-  display:flex;align-items:center;justify-content:center;
-  font-size:9.5px;font-weight:800;color:var(--muted);
-  transition:all .4s;font-family:'JetBrains Mono',monospace;
-}
-.bs-content{flex:1}
-.bs-title{font-size:11.5px;font-weight:600;color:var(--muted);transition:color .4s;line-height:1.3}
-.bs-detail{font-size:9.5px;color:rgba(100,116,139,.6);margin-top:2px;transition:all .4s}
+/* Broker card */
+.c-broker{left:362px;top:198px;width:312px;height:254px;background:linear-gradient(145deg,#1a3a5c 0%,#0b1d30 100%);border:1px solid rgba(96,165,250,.2);color:#c8ddff;box-shadow:0 12px 48px rgba(8,24,56,.6),inset 0 1px 0 rgba(255,255,255,.05)}
+.c-broker .ct{font-size:14px;color:#fff;padding-bottom:9px;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,.09)}
+.bstep{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;font-size:10.5px;color:rgba(186,214,255,.8)}
+.bnum{background:rgba(96,165,250,.18);color:#93c5fd;min-width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;margin-top:1px}
+.bstep.lit .bnum{background:#3b82f6;color:#fff;box-shadow:0 0 8px rgba(59,130,246,.6)}
+.bstep.lit{color:#e2e8f0}
 
-.bs.lit{background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3)}
-.bs.lit .bs-num{background:var(--indigo);border-color:transparent;color:#fff;box-shadow:0 0 12px rgba(99,102,241,.5)}
-.bs.lit .bs-title{color:var(--text)}
-.bs.lit .bs-detail{color:#a5b4fc;opacity:1}
+.no-pass{position:absolute;left:376px;top:470px;width:248px;height:38px;z-index:4;background:rgba(153,27,27,.12);border:1px solid rgba(239,68,68,.28);color:#fca5a5;font-size:9.5px;border-radius:8px;display:flex;align-items:center;padding:0 12px;gap:7px;transition:opacity .35s,filter .35s,box-shadow .3s}
+.no-pass.dim{opacity:.15;filter:saturate(.2) brightness(.6)}
 
-.token-warn{
-  margin-top:14px;padding:10px 12px;border-radius:10px;
-  background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);
-  display:flex;align-items:center;gap:8px;font-size:10px;color:#fcd34d;
-}
-.token-warn::before{content:'⚠️';font-size:13px}
+/* AWS Service cards */
+.c-sec{left:770px;top:168px;width:230px;height:120px;background:rgba(180,83,9,.1);  border:1px solid rgba(251,146,60,.28); color:#fed7aa}
+.c-dyn{left:770px;top:322px;width:230px;height:112px;background:rgba(67,56,202,.13);border:1px solid rgba(129,140,248,.28);color:#c7d2fe}
+.c-s3 {left:770px;top:466px;width:230px;height:134px;background:rgba(6,95,70,.1);   border:1px solid rgba(52,211,153,.22); color:#a7f3d0}
 
-/* ═══════════════════════════════════════════
-   COLUMN 3 — AWS SERVICES
-═══════════════════════════════════════════ */
-#col3{display:flex;flex-direction:column;height:690px;justify-content:center;gap:10px}
-.col-label{
-  font-size:8.5px;font-weight:800;letter-spacing:.14em;
-  text-transform:uppercase;margin-bottom:2px;
-  background:linear-gradient(90deg,var(--teal),#67e8f9);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.aws-card{padding:14px 15px}
-.aws-icon-row{display:flex;align-items:center;gap:9px;margin-bottom:8px}
-.aws-icon{
-  width:28px;height:28px;border-radius:7px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-size:14px;
-}
-.aws-icon.sm{background:rgba(239,68,68,.15);box-shadow:0 0 10px rgba(239,68,68,.2)}
-.aws-icon.ddb{background:rgba(245,158,11,.15);box-shadow:0 0 10px rgba(245,158,11,.2)}
-.aws-icon.s3{background:rgba(16,185,129,.12);box-shadow:0 0 10px rgba(16,185,129,.2)}
-.aws-title{font-size:12px;font-weight:700}
-.aws-title.sm{color:#fca5a5}
-.aws-title.ddb{color:#fcd34d}
-.aws-title.s3{color:#6ee7b7}
-.aws-items{display:flex;flex-direction:column;gap:3px;padding-left:2px}
-.aws-item{
-  font-size:9.5px;color:var(--muted);line-height:1.6;
-  padding-left:12px;position:relative;
-}
-.aws-item::before{
-  content:'›';position:absolute;left:0;
-  color:var(--dim);font-size:12px;line-height:1.2;
-}
+/* Target system cards */
+.c-ts{width:252px;height:84px;left:1076px}
+.c-ts-slack{top:168px;background:rgba(74,21,75,.65); border:1px solid rgba(192,72,216,.38);color:#f3e8ff}
+.c-ts-snow {top:306px;background:rgba(6,95,70,.55);  border:1px solid rgba(52,211,153,.3); color:#d1fae5}
+.c-ts-jira {top:444px;background:rgba(29,78,216,.5); border:1px solid rgba(96,165,250,.3); color:#dbeafe}
+.c-ts-sp   {top:582px;background:rgba(3,105,161,.45);border:1px solid rgba(56,189,248,.25);color:#e0f2fe}
+.badge{display:inline-block;margin-top:4px;padding:1px 7px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:rgba(250,204,21,.14);border:1px solid rgba(250,204,21,.32);color:#fde047}
 
-/* ═══════════════════════════════════════════
-   COLUMN 4 — TARGETS
-═══════════════════════════════════════════ */
-#col4{display:flex;flex-direction:column;height:690px;justify-content:center;gap:10px}
-.tgt-card{padding:12px 13px}
-.tgt-header{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.tgt-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.tgt-name{font-size:12.5px;font-weight:700}
-.tgt-sub{font-size:9.5px;color:var(--muted);line-height:1.6}
-.tgt-badge{
-  display:inline-block;margin-top:5px;
-  font-size:8px;font-weight:700;letter-spacing:.08em;
-  padding:2px 8px;border-radius:20px;
-}
-.tgt.slack{border-color:rgba(168,85,247,.3)}
-.tgt.slack .tgt-dot{background:#a855f7;box-shadow:0 0 8px #a855f7}
-.tgt.slack .tgt-name{color:#c084fc}
-.tgt.slack .tgt-badge{background:rgba(168,85,247,.2);color:#d8b4fe}
-.tgt.snow{border-color:rgba(16,185,129,.3)}
-.tgt.snow .tgt-dot{background:#10b981;box-shadow:0 0 8px #10b981}
-.tgt.snow .tgt-name{color:#34d399}
-.tgt.jira{border-color:rgba(59,130,246,.3)}
-.tgt.jira .tgt-dot{background:#3b82f6;box-shadow:0 0 8px #3b82f6}
-.tgt.jira .tgt-name{color:#60a5fa}
-.tgt.sp{border-color:rgba(30,64,175,.4)}
-.tgt.sp .tgt-dot{background:#2563eb;box-shadow:0 0 8px #2563eb}
-.tgt.sp .tgt-name{color:#93c5fd}
+/* ── SVG ARROWS ── */
+.svg-ov{position:absolute;top:0;left:0;width:1380px;height:980px;pointer-events:none;z-index:3;overflow:visible}
+@keyframes fwd{to{stroke-dashoffset:-22}}
+@keyframes bwd{to{stroke-dashoffset:22}}
+.af{fill:none;stroke-width:1.6;stroke-dasharray:7 4;animation:fwd 1s linear infinite;opacity:.45}
+.ad{fill:none;stroke-width:1.4;stroke-dasharray:4 5;animation:bwd 1.6s linear infinite;opacity:.25}
+.af.act{stroke-width:2.4;opacity:1;animation-duration:.45s!important;filter:drop-shadow(0 0 4px currentColor)}
+.ad.act{stroke-width:2.2;opacity:.95;animation-duration:.7s!important}
+.al{font-size:9px;fill:rgba(155,195,240,.5);font-family:-apple-system,sans-serif}
 
-/* ═══════════════════════════════════════════
-   SVG ARROWS
-═══════════════════════════════════════════ */
-#svg-layer{
-  position:absolute;top:0;left:0;
-  width:1340px;height:690px;pointer-events:none;
-  overflow:visible;
-}
-.flow-path{fill:none;stroke-width:1.5;transition:opacity .45s}
-.flow-path.on{animation:dashflow 1.2s linear infinite;opacity:.85}
-.flow-path.off{opacity:.06;animation:none}
-@keyframes dashflow{to{stroke-dashoffset:-24}}
-
-.flow-label{font-size:9px;font-family:'JetBrains Mono',monospace;transition:opacity .45s}
-.flow-label.on{opacity:.85}
-.flow-label.off{opacity:.06}
-
-.particle{r:3;transition:opacity .45s}
-.particle.on{animation:particlemove var(--dur,2s) linear infinite;opacity:1}
-.particle.off{opacity:0;animation:none}
-@keyframes particlemove{0%{offset-distance:0%}100%{offset-distance:100%}}
-
-/* ═══════════════════════════════════════════
-   CARD STATES
-═══════════════════════════════════════════ */
-.card-hi{
-  border-color:rgba(99,102,241,.55) !important;
-  box-shadow:0 0 0 1px rgba(99,102,241,.25),0 0 28px rgba(99,102,241,.2) !important;
-  background:rgba(15,23,42,.9) !important;
-}
-.card-dim{opacity:.18 !important;filter:blur(.6px);transform:scale(.985)}
-
-/* ═══════════════════════════════════════════
-   STEP PANEL
-═══════════════════════════════════════════ */
-#step-panel{
-  position:absolute;bottom:16px;left:16px;width:286px;z-index:20;
-  background:rgba(10,16,36,.92);
-  backdrop-filter:blur(24px);
-  border:1px solid rgba(99,102,241,.3);
-  border-radius:16px;padding:18px;
-  box-shadow:0 0 40px rgba(99,102,241,.15),0 20px 60px rgba(0,0,0,.5);
-  transition:all .4s cubic-bezier(.4,0,.2,1);
-  display:none;
-}
-#step-panel::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;border-radius:16px 16px 0 0;
-  background:linear-gradient(90deg,transparent,rgba(99,102,241,.6),rgba(0,212,184,.4),transparent);
-}
-#sp-step{font-size:9px;font-weight:700;color:var(--indigo);letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px}
-#sp-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:9px;line-height:1.3}
-#sp-body{font-size:11px;color:var(--muted);line-height:1.8}
-#sp-body strong{color:#c7d2fe}
-
-/* ═══════════════════════════════════════════
-   ENTRANCE ANIMATIONS
-═══════════════════════════════════════════ */
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(99,102,241,.2)}50%{box-shadow:0 0 40px rgba(99,102,241,.4)}}
+/* ── LEGEND ── */
+.legend{display:flex;gap:20px;justify-content:center;padding:14px 20px 24px;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:7px;font-size:10px;color:rgba(255,255,255,.38)}
+.lsq{width:13px;height:13px;border-radius:3px}
 </style>
 </head>
 <body>
 
-<!-- ANIMATED BACKGROUND -->
-<canvas id="bg-canvas"></canvas>
-
 <!-- HEADER -->
-<div id="hdr">
-  <div class="logo-wrap">
-    <div class="logo-mark">S</div>
-    <span class="logo-text">SYMPLYTICS</span>
-  </div>
-  <div id="hdr-title">
+<div class="hdr">
+  <div class="hdr-logo"><img src="https://plain-apac-prod-public.komododecks.com/202610/06/oWxvfU0Mi8VOq1azJWpu/image.png" alt="Symplytics" onerror="this.style.display='none'"></div>
+  <div class="hdr-center">
     <h1>TradeStation — n8n Credential Broker Architecture</h1>
-    <p>Enterprise Architecture &nbsp;·&nbsp; Prepared by Yash Shrivastava &nbsp;·&nbsp; October 2026</p>
+    <p>Symplytics &nbsp;·&nbsp; Prepared by Yash Shrivastava, Enterprise Architect &nbsp;·&nbsp; October 2026</p>
   </div>
   <div class="hdr-right">
-    <div class="conf-badge">CONFIDENTIAL &amp; PROPRIETARY</div>
-    <span class="engage-info">Engagement Start: Oct 2026 &nbsp;|&nbsp; POC: 5-Day Delivery</span>
+    <span class="badge-conf">Confidential &amp; Proprietary</span>
+    <span class="badge-date">Engagement Start: Oct 2026 &nbsp;|&nbsp; POC: 5-Day Delivery</span>
   </div>
 </div>
 
-<!-- NAV -->
-<div id="nav">
-  <button id="btn-start" onclick="togglePlay()">▶&nbsp; Start Walkthrough</button>
-  <button class="nav-btn" id="btn-prev" onclick="step(cur-1)" disabled>◀ Prev</button>
-  <button class="nav-btn" id="btn-next" onclick="step(cur+1)">Next ▶</button>
-  <div id="dots"></div>
-  <div id="voice-ind">
-    <div class="vdot"></div>
-    <span>ElevenLabs · Rachel · AI Voice</span>
-  </div>
+<!-- NAV BAR -->
+<div class="wt-bar">
+  <button class="wt-btn" id="btn-play" onclick="startWT()">&#9654;&nbsp; Start Walkthrough</button>
+  <button class="wt-btn sec" id="btn-prev" onclick="go(-1)" disabled>&#9664; Prev</button>
+  <button class="wt-btn sec" id="btn-next" onclick="go(1)" disabled>Next &#9654;</button>
+  <div class="dots-row" id="dots"></div>
+  <button class="wt-btn sec" id="btn-reset" onclick="resetWT()" style="display:none">&#10005; Reset</button>
+  <div class="wt-right"><span class="vpulse" id="vpulse"></span>&nbsp;ElevenLabs &middot; Rachel &middot; AI Voice</div>
 </div>
 
-<!-- MAIN -->
-<div id="main">
-<div id="diagram">
-
-<!-- COL1: Identity + EKS -->
-<div id="col1">
-  <div class="glass idp-card" id="c-entra">
-    <div class="idp-badge entra">Identity Provider</div>
-    <div class="idp-title">Microsoft Entra ID</div>
-    <div class="idp-sub">JWKS Endpoint – Microsoft targets<br>SharePoint · Exchange · Office 365</div>
-  </div>
-  <div class="glass idp-card" id="c-cognito">
-    <div class="idp-badge cognito">Identity Provider</div>
-    <div class="idp-title">AWS Cognito</div>
-    <div class="idp-sub">JWKS Endpoint – Non-Microsoft<br>Slack · ServiceNow · Jira</div>
-  </div>
-  <div class="eks-wrap" id="c-eks">
-    <span class="eks-label">AWS EKS CLUSTER</span>
-    <div class="wf-box">
-      <span class="wf-box-label">N8N WORKFLOWS</span>
-      <div class="wf slack" id="wf-slack"><div class="wf-name">Slack Workflow</div><div class="wf-desc">per-department automation</div><span class="wf-jwt">HTTP+JWT</span></div>
-      <div class="wf snow" id="wf-snow"><div class="wf-name">ServiceNow Workflow</div><div class="wf-desc">incident / ticket automation</div><span class="wf-jwt">HTTP+JWT</span></div>
-      <div class="wf jira" id="wf-jira"><div class="wf-name">Jira Workflow</div><div class="wf-desc">issue / project automation</div><span class="wf-jwt">HTTP+JWT</span></div>
-      <div class="wf sp" id="wf-sp"><div class="wf-name">SharePoint Workflow</div><div class="wf-desc">document automation</div><span class="wf-jwt">HTTP+JWT</span></div>
-      <div class="wf future"><div class="wf-name">Future workflows…</div></div>
-    </div>
-    <div class="no-creds">No credentials in n8n &nbsp;·&nbsp; Short-lived JWT only</div>
-  </div>
+<!-- STEP INFO PANEL -->
+<div class="step-panel hidden" id="sp">
+  <div class="sp-name" id="sp-name"></div>
+  <div class="sp-text" id="sp-text"></div>
 </div>
 
-<!-- COL2: Broker -->
-<div id="col2">
-  <div class="glass broker-card" id="c-broker">
-    <div class="broker-header">
-      <div class="broker-icon">⚡</div>
-      <div>
-        <div class="broker-title">Credential Broker Service</div>
-        <div class="broker-sub">Zero-trust API gateway · Runtime-only secrets</div>
-      </div>
-    </div>
-    <div class="bs" id="bs1"><div class="bs-num">01</div><div class="bs-content"><div class="bs-title">Validate JWT (RSA256 / JWKS)</div><div class="bs-detail">Verify signature against Entra ID or Cognito JWKS endpoint</div></div></div>
-    <div class="bs" id="bs2"><div class="bs-num">02</div><div class="bs-content"><div class="bs-title">Check Permission Table (DynamoDB)</div><div class="bs-detail">EntraGroup → Target → Allowed Methods → Endpoints (ACL)</div></div></div>
-    <div class="bs" id="bs3"><div class="bs-num">03</div><div class="bs-content"><div class="bs-title">Fetch secret at runtime</div><div class="bs-detail">IRSA pod role · tmpfs mount via CSI Driver + ASCP</div></div></div>
-    <div class="bs" id="bs4"><div class="bs-num">04</div><div class="bs-content"><div class="bs-title">Execute downstream API call</div><div class="bs-detail">Scoped token · n8n never holds the credential</div></div></div>
-    <div class="bs" id="bs5"><div class="bs-num">05</div><div class="bs-content"><div class="bs-title">Write audit record to S3 WORM</div><div class="bs-detail">SHA-256 hash · W3C traceparent · Compliance Mode</div></div></div>
-    <div class="token-warn">Token passthrough prevented – JWTs never forwarded to targets</div>
+<!-- DIAGRAM CANVAS -->
+<div class="outer" id="outer">
+<div class="canvas-wrap" id="cw">
+
+  <!-- Zone backgrounds -->
+  <div class="z z-eks"></div>
+  <div class="z z-aws"></div>
+  <div class="z z-tgt"></div>
+  <div class="z z-n8n"></div>
+
+  <!-- Zone labels -->
+  <div class="zl zl-eks">AWS EKS Cluster</div>
+  <div class="zl zl-aws">AWS Services</div>
+  <div class="zl zl-tgt">Target Systems</div>
+  <div class="zl zl-n8n">n8n Workflows</div>
+
+  <!-- Identity providers -->
+  <div class="c c-entra" id="entra">
+    <span class="ct">Microsoft Entra ID</span>
+    <span class="cs">JWKS Endpoint – Microsoft targets<br>SharePoint · Exchange · Office 365</span>
   </div>
+  <div class="c c-cog" id="cog">
+    <span class="ct">AWS Cognito</span>
+    <span class="cs">JWKS Endpoint – Non-Microsoft<br>Slack · ServiceNow · Jira</span>
+  </div>
+
+  <!-- Workflows -->
+  <div class="c c-wf c-wf-slack" id="wf-slack"><span class="ct">Slack Workflow</span><span class="cs">per-department automation</span></div>
+  <div class="c c-wf c-wf-snow"  id="wf-snow"><span class="ct">ServiceNow Workflow</span><span class="cs">incident / ticket automation</span></div>
+  <div class="c c-wf c-wf-jira"  id="wf-jira"><span class="ct">Jira Workflow</span><span class="cs">issue / project automation</span></div>
+  <div class="c c-wf c-wf-sp"    id="wf-sp"><span class="ct">SharePoint Workflow</span><span class="cs">document automation</span></div>
+  <div class="wf-fut" id="wf-fut">Future workflows…</div>
+  <div class="no-creds" id="no-creds">No credentials in n8n<br><small style="font-size:9px;opacity:.7">Short-lived JWT only</small></div>
+
+  <!-- Broker -->
+  <div class="c c-broker" id="broker">
+    <span class="ct">Credential Broker Service</span>
+    <div class="bstep" id="bs1"><span class="bnum">1</span>Validate JWT (RSA256 / JWKS)</div>
+    <div class="bstep" id="bs2"><span class="bnum">2</span>Check Permission Table (DynamoDB)</div>
+    <div class="bstep" id="bs3"><span class="bnum">3</span>Fetch secret at runtime</div>
+    <div class="bstep" id="bs4"><span class="bnum">4</span>Execute downstream API call</div>
+    <div class="bstep" id="bs5"><span class="bnum">5</span>Write audit record to S3 WORM</div>
+  </div>
+  <div class="no-pass" id="no-pass">⚠&nbsp; Token passthrough prevented – JWTs never forwarded</div>
+
+  <!-- AWS Services -->
+  <div class="c c-sec" id="secrets">
+    <span class="ct">AWS Secrets Manager</span>
+    <span class="cs">IRSA – no static keys<br>AWSCURRENT / AWSPENDING labels<br>tmpfs mount via CSI + ASCP<br>Auto-rotation on 401</span>
+  </div>
+  <div class="c c-dyn" id="dynamo">
+    <span class="ct">DynamoDB Permission Table</span>
+    <span class="cs">EntraGroup → Target System<br>Allowed HTTP Methods<br>Allowed Endpoints (ACL)</span>
+  </div>
+  <div class="c c-s3" id="s3">
+    <span class="ct">S3 Object Lock – WORM</span>
+    <span class="cs">Compliance Mode (FINRA 4511)<br>SEC 17a-4(f) compliant<br>JSON + SHA-256 payload hash<br>W3C traceparent header</span>
+  </div>
+
+  <!-- Target Systems -->
+  <div class="c c-ts c-ts-slack" id="t-slack"><span class="ct">Slack</span><span class="cs">Per-department scoped token</span><span class="badge">Primary use case</span></div>
+  <div class="c c-ts c-ts-snow"  id="t-snow"><span class="ct">ServiceNow</span><span class="cs">OAuth 2.0 Client Credentials<br>Scoped ACLs · exp backoff</span></div>
+  <div class="c c-ts c-ts-jira"  id="t-jira"><span class="ct">Jira</span><span class="cs">OAuth 2.0 3LO<br>read:jira-work / write:jira-work</span></div>
+  <div class="c c-ts c-ts-sp"    id="t-sp"><span class="ct">SharePoint Online</span><span class="cs">Sites.Selected scope<br>Zero-access default; per-site grant</span></div>
+
+  <!-- SVG Arrows -->
+  <svg class="svg-ov" viewBox="0 0 1380 980" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="mw"   markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="rgba(130,165,255,.75)"/></marker>
+      <marker id="mo"   markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="rgba(251,146,60,.9)"/></marker>
+      <marker id="mp"   markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="rgba(129,140,248,.9)"/></marker>
+      <marker id="mg"   markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="rgba(52,211,153,.9)"/></marker>
+      <marker id="msl"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="rgba(216,72,216,.9)"/></marker>
+      <marker id="msn"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="rgba(52,211,153,.9)"/></marker>
+      <marker id="mj"   markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="rgba(96,165,250,.9)"/></marker>
+      <marker id="msp"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="rgba(56,189,248,.9)"/></marker>
+      <marker id="md"   markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="rgba(96,165,250,.38)"/></marker>
+    </defs>
+    <!-- JWKS validate (dashed back-arrows) -->
+    <path id="e-entra" class="ad" stroke="rgba(96,165,250,.4)"  d="M 167 108 L 167 148 L 478 148 L 478 198" marker-end="url(#md)"/>
+    <text class="al" x="262" y="143">JWKS validate</text>
+    <path id="e-cog"   class="ad" stroke="rgba(251,191,36,.38)" d="M 425 108 L 425 148 L 528 148 L 528 198" marker-end="url(#md)"/>
+    <text class="al" x="478" y="143">JWKS validate</text>
+    <!-- Workflows → Broker -->
+    <path id="e-wf-slack" class="af" stroke="rgba(216,72,216,.6)"  d="M 274 233 L 316 233 L 316 264 L 362 264" marker-end="url(#mw)"/>
+    <text class="al" x="280" y="226">HTTP+JWT</text>
+    <path id="e-wf-snow"  class="af" stroke="rgba(52,211,153,.55)" d="M 274 317 L 316 317 L 316 305 L 362 305" marker-end="url(#mw)"/>
+    <text class="al" x="280" y="310">HTTP+JWT</text>
+    <path id="e-wf-jira"  class="af" stroke="rgba(96,165,250,.55)" d="M 274 401 L 316 401 L 316 345 L 362 345" marker-end="url(#mw)"/>
+    <text class="al" x="280" y="394">HTTP+JWT</text>
+    <path id="e-wf-sp"    class="af" stroke="rgba(56,189,248,.5)"  d="M 274 485 L 316 485 L 316 382 L 362 382" marker-end="url(#mw)"/>
+    <text class="al" x="280" y="478">HTTP+JWT</text>
+    <!-- Broker → AWS Services -->
+    <path id="e-bk-sec" class="af" stroke="rgba(251,146,60,.75)" d="M 674 248 L 718 248 L 718 228 L 770 228" marker-end="url(#mo)"/>
+    <text class="al" x="708" y="241" text-anchor="middle">fetch secret</text>
+    <path id="e-bk-dyn" class="af" stroke="rgba(129,140,248,.7)" d="M 674 324 L 718 324 L 718 378 L 770 378" marker-end="url(#mp)"/>
+    <text class="al" x="708" y="350" text-anchor="middle">permission</text>
+    <path id="e-bk-s3"  class="af" stroke="rgba(52,211,153,.65)" d="M 674 400 L 718 400 L 718 533 L 770 533" marker-end="url(#mg)"/>
+    <text class="al" x="708" y="470" text-anchor="middle">audit (WORM)</text>
+    <!-- Broker → Target Systems -->
+    <path id="e-bk-tslack" class="af" stroke="rgba(216,72,216,.52)"  d="M 674 252 L 712 252 L 712 152 L 1076 152 L 1076 168"  marker-end="url(#msl)"/>
+    <text class="al" x="880" y="147" text-anchor="middle">scoped API call</text>
+    <path id="e-bk-tsnow"  class="af" stroke="rgba(52,211,153,.52)"  d="M 674 328 L 712 328 L 712 348 L 1076 348"              marker-end="url(#msn)"/>
+    <text class="al" x="880" y="342" text-anchor="middle">scoped API call</text>
+    <path id="e-bk-tjira"  class="af" stroke="rgba(96,165,250,.5)"   d="M 674 372 L 712 372 L 712 486 L 1076 486"              marker-end="url(#mj)"/>
+    <text class="al" x="880" y="480" text-anchor="middle">scoped API call</text>
+    <path id="e-bk-tsp"    class="af" stroke="rgba(56,189,248,.48)"  d="M 674 416 L 712 416 L 712 624 L 1076 624 L 1076 582"   marker-end="url(#msp)"/>
+    <text class="al" x="880" y="635" text-anchor="middle">scoped API call</text>
+  </svg>
+
+</div><!-- /canvas-wrap -->
+</div><!-- /outer -->
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="leg"><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="rgba(96,165,250,.65)" stroke-width="1.6" stroke-dasharray="7 4"/></svg>Animated data flow</div>
+  <div class="leg"><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="rgba(96,165,250,.38)" stroke-width="1.4" stroke-dasharray="4 5"/></svg>JWKS validation</div>
+  <div class="leg"><div class="lsq" style="background:rgba(59,130,246,.15);border:1px solid rgba(96,165,250,.25)"></div>AWS EKS Cluster</div>
+  <div class="leg"><div class="lsq" style="background:rgba(245,158,11,.1);border:1px solid rgba(251,146,60,.25)"></div>AWS Services</div>
+  <div class="leg"><div class="lsq" style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25)"></div>Target Systems</div>
+  <div class="leg"><div class="lsq" style="background:linear-gradient(135deg,#1a3a5c,#0b1d30);border:1px solid rgba(96,165,250,.2)"></div>Credential Broker</div>
 </div>
-
-<!-- COL3: AWS Services -->
-<div id="col3">
-  <div class="col-label">AWS SERVICES</div>
-  <div class="glass aws-card" id="c-sm">
-    <div class="aws-icon-row"><div class="aws-icon sm">🔐</div><div class="aws-title sm">AWS Secrets Manager</div></div>
-    <div class="aws-items">
-      <div class="aws-item">IRSA – no static keys anywhere</div>
-      <div class="aws-item">AWSCURRENT / AWSPENDING labels</div>
-      <div class="aws-item">tmpfs mount via CSI + ASCP</div>
-      <div class="aws-item">Auto-rotation on 401 response</div>
-    </div>
-  </div>
-  <div class="glass aws-card" id="c-ddb">
-    <div class="aws-icon-row"><div class="aws-icon ddb">📋</div><div class="aws-title ddb">DynamoDB Permission Table</div></div>
-    <div class="aws-items">
-      <div class="aws-item">EntraGroup → Target System</div>
-      <div class="aws-item">Allowed HTTP Methods</div>
-      <div class="aws-item">Allowed Endpoints (ACL)</div>
-    </div>
-  </div>
-  <div class="glass aws-card" id="c-s3">
-    <div class="aws-icon-row"><div class="aws-icon s3">🗄️</div><div class="aws-title s3">S3 Object Lock – WORM</div></div>
-    <div class="aws-items">
-      <div class="aws-item">Compliance Mode (FINRA 4511)</div>
-      <div class="aws-item">SEC 17a-4(f) compliant</div>
-      <div class="aws-item">JSON + SHA-256 payload hash</div>
-      <div class="aws-item">W3C traceparent header</div>
-    </div>
-  </div>
-</div>
-
-<!-- COL4: Targets -->
-<div id="col4">
-  <div class="col-label">TARGET SYSTEMS</div>
-  <div class="glass tgt-card tgt slack" id="c-slack">
-    <div class="tgt-header"><div class="tgt-dot"></div><div class="tgt-name">Slack</div></div>
-    <div class="tgt-sub">Per-department scoped token</div>
-    <span class="tgt-badge">PRIMARY USE CASE</span>
-  </div>
-  <div class="glass tgt-card tgt snow" id="c-snow">
-    <div class="tgt-header"><div class="tgt-dot"></div><div class="tgt-name">ServiceNow</div></div>
-    <div class="tgt-sub">OAuth 2.0 Client Credentials<br>Scoped ACLs · exp backoff</div>
-  </div>
-  <div class="glass tgt-card tgt jira" id="c-jira">
-    <div class="tgt-header"><div class="tgt-dot"></div><div class="tgt-name">Jira</div></div>
-    <div class="tgt-sub">OAuth 2.0 3LO<br>read:jira-work / write:jira-work</div>
-  </div>
-  <div class="glass tgt-card tgt sp" id="c-sp">
-    <div class="tgt-header"><div class="tgt-dot"></div><div class="tgt-name">SharePoint Online</div></div>
-    <div class="tgt-sub">Sites.Selected scope<br>Zero-access default; per-site grant</div>
-  </div>
-</div>
-
-<!-- SVG ARROWS OVERLAY -->
-<svg id="svg-layer" viewBox="0 0 1340 690" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <marker id="ah-ind" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3z" fill="#6366f1"/></marker>
-    <marker id="ah-teal" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3z" fill="#00d4b8"/></marker>
-    <marker id="ah-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3z" fill="#ef4444"/></marker>
-    <marker id="ah-amb" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3z" fill="#f59e0b"/></marker>
-    <marker id="ah-grn" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3z" fill="#10b981"/></marker>
-  </defs>
-  <!-- Workflows → Broker -->
-  <path id="a1" class="flow-path off" d="M224,410 C238,410 246,410 256,410" stroke="#6366f1" stroke-dasharray="8,4" marker-end="url(#ah-ind)"/>
-  <text id="al1" class="flow-label off" x="226" y="402" fill="#6366f1">HTTP+JWT</text>
-  <!-- Broker → Entra -->
-  <path id="a2" class="flow-path off" d="M256,280 C244,280 238,180 224,160" stroke="#3b82f6" stroke-dasharray="8,4" marker-end="url(#ah-ind)"/>
-  <text id="al2" class="flow-label off" x="208" y="228" fill="#60a5fa">JWKS validate</text>
-  <!-- Broker → Cognito -->
-  <path id="a3" class="flow-path off" d="M256,430 C244,430 238,300 224,280" stroke="#f59e0b" stroke-dasharray="8,4" marker-end="url(#ah-amb)"/>
-  <text id="al3" class="flow-label off" x="202" y="368" fill="#fbbf24">JWKS validate</text>
-  <!-- Broker → SM -->
-  <path id="a4" class="flow-path off" d="M542,320 C640,320 720,220 800,210" stroke="#ef4444" stroke-dasharray="8,4" marker-end="url(#ah-red)"/>
-  <text id="al4" class="flow-label off" x="632" y="256" fill="#fca5a5">fetch secret</text>
-  <!-- Broker → DDB -->
-  <path id="a5" class="flow-path off" d="M542,390 C670,390 720,400 800,400" stroke="#f59e0b" stroke-dasharray="8,4" marker-end="url(#ah-amb)"/>
-  <text id="al5" class="flow-label off" x="646" y="384" fill="#fbbf24">permission</text>
-  <!-- Broker → S3 -->
-  <path id="a6" class="flow-path off" d="M542,430 C640,430 720,540 800,540" stroke="#10b981" stroke-dasharray="8,4" marker-end="url(#ah-grn)"/>
-  <text id="al6" class="flow-label off" x="630" y="510" fill="#34d399">audit (WORM)</text>
-  <!-- SM/DDB → Targets -->
-  <path id="a7" class="flow-path off" d="M1084,210 C1104,210 1118,300 1118,320" stroke="#6366f1" stroke-dasharray="8,4" marker-end="url(#ah-ind)"/>
-  <text id="al7" class="flow-label off" x="1082" y="265" fill="#a5b4fc">scoped call</text>
-  <path id="a8" class="flow-path off" d="M1084,400 C1110,400 1118,440 1118,440" stroke="#6366f1" stroke-dasharray="8,4" marker-end="url(#ah-ind)"/>
-  <path id="a9" class="flow-path off" d="M1084,210 C1108,210 1120,530 1120,540" stroke="#6366f1" stroke-dasharray="8,4" marker-end="url(#ah-ind)"/>
-</svg>
-
-</div><!-- /diagram -->
-
-<!-- STEP PANEL -->
-<div id="step-panel">
-  <div id="sp-step">STEP 1 OF 9</div>
-  <div id="sp-title">Architecture Overview</div>
-  <div id="sp-body"></div>
-</div>
-
-</div><!-- /main -->
 
 <script>
-/* ─── CANVAS BACKGROUND ─── */
-(function(){
-  const c=document.getElementById('bg-canvas');
-  const ctx=c.getContext('2d');
-  let W,H,stars=[];
-  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight;makeStars()}
-  function makeStars(){
-    stars=[];
-    for(let i=0;i<160;i++){
-      stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),da:Math.random()*.003+.001,vx:(Math.random()-.5)*.12,vy:(Math.random()-.5)*.12})
-    }
-  }
-  function draw(){
-    ctx.clearRect(0,0,W,H);
-    // gradient bg
-    const g=ctx.createRadialGradient(W*.35,H*.3,0,W*.35,H*.3,W*.7);
-    g.addColorStop(0,'rgba(30,20,80,.18)');g.addColorStop(.5,'rgba(10,15,40,.12)');g.addColorStop(1,'rgba(2,8,23,0)');
-    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-    const g2=ctx.createRadialGradient(W*.75,H*.7,0,W*.75,H*.7,W*.5);
-    g2.addColorStop(0,'rgba(0,80,80,.1)');g2.addColorStop(1,'rgba(2,8,23,0)');
-    ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
-    // stars
-    stars.forEach(s=>{
-      s.x+=s.vx;s.y+=s.vy;s.a+=s.da;
-      if(s.x<0)s.x=W;if(s.x>W)s.x=0;if(s.y<0)s.y=H;if(s.y>H)s.y=0;
-      const alpha=.35+.3*Math.sin(s.a);
-      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-      ctx.fillStyle=`rgba(148,163,184,${alpha})`;ctx.fill();
-    });
-    requestAnimationFrame(draw);
-  }
-  window.addEventListener('resize',resize);
-  resize();draw();
-})();
-
-/* ─── STEP DATA ─── */
-const STEPS=[
-  {num:"STEP 1 OF 9",title:"Architecture Overview",body:"The <strong>n8n Credential Broker</strong> is a zero-trust pattern that eliminates stored credentials from workflows entirely. No API keys, passwords, or service account tokens exist anywhere in n8n config. Every call is brokered, validated, and audited at runtime.",
-   hi:[],bs:0,arrows:[]},
-  {num:"STEP 2 OF 9",title:"n8n Workflows Send JWT Requests",body:"Workflow pods in <strong>AWS EKS</strong> fire HTTP requests to the Credential Broker carrying only a <strong>short-lived JWT</strong>. No API keys. No passwords. No service account credentials anywhere in the workflow configuration.",
-   hi:["c-eks","wf-slack","wf-snow","wf-jira","wf-sp","c-broker"],bs:0,arrows:["a1","al1"]},
-  {num:"STEP 3 OF 9",title:"JWT Validation via JWKS",body:"The broker validates the JWT signature against a live <strong>JWKS endpoint</strong>. <strong>Microsoft Entra ID</strong> handles SharePoint and Exchange. <strong>AWS Cognito</strong> handles Slack, ServiceNow, and Jira. Expired or tampered tokens are rejected immediately.",
-   hi:["c-broker","c-entra","c-cognito"],bs:1,arrows:["a2","al2","a3","al3"]},
-  {num:"STEP 4 OF 9",title:"Permission Check — DynamoDB ACL",body:"The broker queries the <strong>DynamoDB Permission Table</strong>: EntraGroup → Target System → Allowed HTTP Methods → Allowed Endpoints. Deny-by-default — only explicitly configured combinations are permitted.",
-   hi:["c-broker","c-ddb"],bs:2,arrows:["a5","al5"]},
-  {num:"STEP 5 OF 9",title:"Runtime Secret Fetch via IRSA",body:"Credentials are retrieved from <strong>AWS Secrets Manager</strong> using <strong>IRSA</strong> — pod-level IAM roles with no static keys anywhere. Secrets mount to a <strong>tmpfs volume via CSI Driver + ASCP</strong>. They never touch disk and are never visible to the workflow.",
-   hi:["c-broker","c-sm"],bs:3,arrows:["a4","al4"]},
-  {num:"STEP 6 OF 9",title:"Execute Downstream API Call",body:"With a validated identity, authorised permission set, and a runtime-fetched credential, the broker executes the API call on the workflow's behalf. <strong>n8n never holds or sees the credential</strong> — it only receives the final result.",
-   hi:["c-broker","c-slack","c-snow","c-jira","c-sp"],bs:4,arrows:["a7","al7","a8","a9"]},
-  {num:"STEP 7 OF 9",title:"WORM Audit Record — S3 Object Lock",body:"Every call writes an immutable record to <strong>S3 Object Lock Compliance Mode</strong>. Each entry carries a <strong>SHA-256 payload hash</strong> and <strong>W3C traceparent</strong> header. Satisfies <strong>SEC 17a-4(f)</strong> and <strong>FINRA 4511</strong> requirements.",
-   hi:["c-broker","c-s3"],bs:5,arrows:["a6","al6"]},
-  {num:"STEP 8 OF 9",title:"Automatic 401 — Key Rotation",body:"On a <strong>401 Unauthorized</strong> response, the broker invalidates its cached secret and retries with <strong>AWSPENDING</strong> from Secrets Manager. Key rotation is fully transparent — <strong>zero workflow downtime, zero manual intervention</strong>.",
-   hi:["c-sm","c-slack","c-snow","c-jira","c-sp"],bs:3,arrows:["a4","al4","a7","al7"]},
-  {num:"STEP 9 OF 9",title:"Production Deployment — EKS + Helm",body:"The full stack runs on <strong>AWS EKS</strong> via <strong>Helm charts</strong> with full namespace isolation. <strong>IRSA</strong> binds IAM roles at the pod level. <strong>Sites.Selected</strong> scope limits SharePoint to specified site collections only. Production-ready in 5 days.",
-   hi:["c-eks","c-broker","c-sm","c-ddb","c-s3"],bs:0,arrows:[]}
+/* ── Pre-generated audio (Supabase CDN, ElevenLabs Rachel) ── */
+const AUDIO_URLS = [
+  'https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step1.mp3',
+  'https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step2.mp3',
+  'https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step3.mp3',
+  'https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step4.mp3',
+  'https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step5.mp3',
+  'https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step6.mp3',
+  'https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step7.mp3',
+  'https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step8.mp3',
+  'https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step9.mp3'
 ];
 
-const ALL_CARDS=["c-entra","c-cognito","c-eks","wf-slack","wf-snow","wf-jira","wf-sp","c-broker","c-sm","c-ddb","c-s3","c-slack","c-snow","c-jira","c-sp"];
-const ALL_BS=["bs1","bs2","bs3","bs4","bs5"];
-const ALL_ARROWS=["a1","al1","a2","al2","a3","al3","a4","al4","a5","al5","a6","al6","a7","al7","a8","a9"];
+/* ── 9-step walkthrough ── */
+const STEPS = [
+  {
+    title: 'Architecture Overview',
+    txt: 'The TradeStation n8n Credential Broker solves a critical enterprise security problem. Automation workflows need to call Slack, ServiceNow, Jira, and SharePoint — but storing credentials inside n8n creates credential sprawl, audit gaps, and serious compliance risks for a regulated financial institution. Symplytics designed a centralized broker pattern on AWS EKS that eliminates all credentials from the automation layer entirely.',
+    cards: ['broker'], arrows: [], hlClass: 'hl',
+    brokerStep: 0
+  },
+  {
+    title: 'n8n Workflows — Zero Credentials',
+    txt: 'Inside the EKS cluster, four n8n workflows handle different domains: Slack for per-department automation, ServiceNow for incidents and tickets, Jira for project automation, and SharePoint for document flows. None of these workflows hold any credentials — they present only a short-lived JSON Web Token with each request. No keys. No passwords. No static secrets of any kind.',
+    cards: ['wf-slack','wf-snow','wf-jira','wf-sp','no-creds'],
+    arrows: ['e-wf-slack','e-wf-snow','e-wf-jira','e-wf-sp'],
+    hlClass: 'hl-violet', brokerStep: 0
+  },
+  {
+    title: 'JWT Validation via JWKS',
+    txt: 'The Credential Broker immediately validates the token signature against a live JWKS endpoint. Microsoft Entra ID validates tokens for SharePoint and Exchange — AWS Cognito validates tokens for Slack, ServiceNow, and Jira. Both use RSA-256 signatures. An expired or tampered token is rejected here, before any secret is ever touched.',
+    cards: ['entra','cog','broker'],
+    arrows: ['e-entra','e-cog'],
+    hlClass: 'hl', brokerStep: 1
+  },
+  {
+    title: 'Permission Check — DynamoDB ACL',
+    txt: 'After identity is confirmed, the broker queries the DynamoDB Permission Table. Every Entra group is mapped to which target systems it can reach, which HTTP methods it may use, and which endpoints are explicitly allowed. This is zero-trust enforcement — deny by default. Even a perfectly valid JWT cannot call any endpoint unless that combination has an explicit allow entry.',
+    cards: ['dynamo','broker'],
+    arrows: ['e-bk-dyn'],
+    hlClass: 'hl-purple', brokerStep: 2
+  },
+  {
+    title: 'Runtime Secret Fetch via IRSA',
+    txt: 'Only after identity and permissions are verified does the broker retrieve the actual credential from AWS Secrets Manager. Access uses IRSA — IAM Roles for Service Accounts — binding a pod-level IAM role with no static keys anywhere in the system. Secrets mount to a tmpfs volume via CSI Driver and ASCP. They never touch persistent disk and are never visible to the workflow.',
+    cards: ['secrets','broker'],
+    arrows: ['e-bk-sec'],
+    hlClass: 'hl-warm', brokerStep: 3
+  },
+  {
+    title: 'Execute Downstream API Call',
+    txt: 'With a validated identity, an authorised permission set, and a runtime-fetched credential, the broker executes the API call on behalf of the workflow. Slack receives per-department scoped bot tokens. ServiceNow connects via OAuth 2.0 Client Credentials. Jira uses OAuth 2.0 three-legged flow. SharePoint uses Sites.Selected scope. The n8n workflow never sees the credential — it only receives the result.',
+    cards: ['broker','t-slack','t-snow','t-jira','t-sp'],
+    arrows: ['e-bk-tslack','e-bk-tsnow','e-bk-tjira','e-bk-tsp'],
+    hlClass: 'hl-green', brokerStep: 4
+  },
+  {
+    title: 'WORM Audit Record — S3 Object Lock',
+    txt: 'Every single brokered API call generates a structured JSON audit record written to S3 with Object Lock in Compliance mode — write-once, read-many, and tamper-proof. Each record includes the caller identity from the JWT, a SHA-256 hash of the full request payload, and a W3C traceparent header for end-to-end distributed tracing. This satisfies SEC Rule 17a-4(f) and FINRA Rule 4511 for financial-grade electronic record retention.',
+    cards: ['s3','broker'],
+    arrows: ['e-bk-s3'],
+    hlClass: 'hl-green', brokerStep: 5
+  },
+  {
+    title: 'Automatic 401 — Key Rotation',
+    txt: 'If a downstream API returns 401 Unauthorized, the broker automatically invalidates its cached secret and retries using the AWSPENDING version from Secrets Manager. This transparent rotation means that during an active key rotation, workflows continue running with zero downtime and zero manual intervention. The staging label strategy decouples secret rotation from workflow availability entirely.',
+    cards: ['secrets','t-slack','t-snow','t-jira','t-sp'],
+    arrows: ['e-bk-sec','e-bk-tslack','e-bk-tsnow','e-bk-tjira','e-bk-tsp'],
+    hlClass: 'hl-warm', brokerStep: 3
+  },
+  {
+    title: '5-Day Proof of Concept — EKS + Helm',
+    txt: 'Symplytics delivers a working proof of concept in five days. The full stack runs on AWS EKS via Helm charts with namespace isolation between the broker and workflow pods. Phase one validates the complete broker pattern using the Slack per-department use case: JWT issuance via Cognito, permission check via DynamoDB, secret fetch from Secrets Manager, Slack API execution, and audit log write to S3 Object Lock. Phase two expands to ServiceNow and Jira.',
+    cards: ['broker','wf-slack','t-slack','secrets','dynamo','s3'],
+    arrows: ['e-wf-slack','e-bk-sec','e-bk-dyn','e-bk-s3','e-bk-tslack'],
+    hlClass: 'hl', brokerStep: 0
+  }
+];
 
-let cur=0,playing=false,timer=null,audio=null;
+const ALL_CARDS  = ['entra','cog','wf-slack','wf-snow','wf-jira','wf-sp','broker','secrets','dynamo','s3','t-slack','t-snow','t-jira','t-sp'];
+const ALL_EXTRA  = ['wf-fut','no-creds','no-pass'];
+const ALL_ARROWS = ['e-entra','e-cog','e-wf-slack','e-wf-snow','e-wf-jira','e-wf-sp','e-bk-sec','e-bk-dyn','e-bk-s3','e-bk-tslack','e-bk-tsnow','e-bk-tjira','e-bk-tsp'];
+const HLC        = ['hl','hl-warm','hl-green','hl-purple','hl-violet','hl-red'];
+const ALL_BS     = ['bs1','bs2','bs3','bs4','bs5'];
 
-// Build dots
-const dotsEl=document.getElementById('dots');
-STEPS.forEach((_,i)=>{
-  const d=document.createElement('div');
-  d.className='dot'+(i===0?' active':'');
-  d.onclick=()=>step(i);
+let step = -1, playing = false, aud = null;
+
+/* Build dots */
+const dotsEl = document.getElementById('dots');
+STEPS.forEach((_,i) => {
+  const d = document.createElement('div');
+  d.className = 'dot';
+  d.title = STEPS[i].title;
+  d.onclick = () => jump(i);
   dotsEl.appendChild(d);
 });
 
-function step(n){
-  if(n<0||n>=STEPS.length)return;
-  cur=n;
-  const s=STEPS[n];
+/* Responsive scale */
+function scale() {
+  const cw    = document.getElementById('cw');
+  const outer = document.getElementById('outer');
+  const s = Math.min(1, outer.offsetWidth / 1380);
+  cw.style.transform = 'scale(' + s + ')';
+  outer.style.height = (980 * s) + 'px';
+}
+window.addEventListener('resize', scale);
+scale();
 
-  // Panel
-  const panel=document.getElementById('step-panel');
-  if(playing||n>0){
-    panel.style.display='block';
-    document.getElementById('sp-step').textContent=s.num;
-    document.getElementById('sp-title').textContent=s.title;
-    document.getElementById('sp-body').innerHTML=s.body;
-  }
+/* vpulse */
+function vpOn(on) { document.getElementById('vpulse').classList.toggle('on', on); }
 
-  // Broker steps
-  ALL_BS.forEach(id=>document.getElementById(id).classList.remove('lit'));
-  if(s.bs>0)document.getElementById('bs'+s.bs).classList.add('lit');
+/* Clear all visual state */
+function clearAll() {
+  ALL_CARDS.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('dim', ...HLC); });
+  ALL_EXTRA.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('dim', ...HLC); });
+  ALL_ARROWS.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('act'); });
+  ALL_BS.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('lit'); });
+}
 
-  // Cards
-  if(!s.hi.length){
-    ALL_CARDS.forEach(id=>{ const el=document.getElementById(id); if(el){ el.classList.remove('card-hi','card-dim'); }});
-  } else {
-    ALL_CARDS.forEach(id=>{
-      const el=document.getElementById(id); if(!el)return;
-      el.classList.remove('card-hi','card-dim');
-      s.hi.includes(id)?el.classList.add('card-hi'):el.classList.add('card-dim');
-    });
-  }
+/* Apply a step */
+function applyStep(i) {
+  clearAll();
+  const s = STEPS[i];
+  const activeSet = new Set(s.cards);
 
-  // Arrows
-  ALL_ARROWS.forEach(id=>{
-    const el=document.getElementById(id); if(!el)return;
-    el.classList.remove('on','off');
-    el.classList.add(s.arrows.includes(id)?'on':'off');
+  ALL_CARDS.forEach(id => { const el = document.getElementById(id); if (el && !activeSet.has(id)) el.classList.add('dim'); });
+  ALL_EXTRA.forEach(id => { const el = document.getElementById(id); if (el && !activeSet.has(id)) el.classList.add('dim'); });
+  s.cards.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add(s.hlClass || 'hl'); });
+  s.arrows.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('act'); });
+  if (s.brokerStep > 0) document.getElementById('bs' + s.brokerStep).classList.add('lit');
+
+  document.querySelectorAll('.dot').forEach((d, idx) => {
+    d.className = 'dot' + (idx === i ? ' act' : (idx < i ? ' done' : ''));
   });
 
-  // Dots
-  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===n));
-
-  // Nav
-  document.getElementById('btn-prev').disabled=(n===0);
-  document.getElementById('btn-next').disabled=(n===STEPS.length-1);
-
-  // Audio
-  if(window.ARCH_AUDIO&&window.ARCH_AUDIO[n]){
-    if(audio){audio.pause();audio=null;}
-    audio=new Audio(window.ARCH_AUDIO[n]);
-    audio.play().catch(()=>{});
-    document.getElementById('voice-ind').classList.add('playing');
-    audio.onended=()=>{
-      document.getElementById('voice-ind').classList.remove('playing');
-      if(playing&&cur<STEPS.length-1)setTimeout(()=>step(cur+1),500);
-    };
-  }
-
-  scaleCanvas();
+  document.getElementById('sp-name').textContent = 'Step ' + (i+1) + ' of ' + STEPS.length + '  —  ' + s.title;
+  document.getElementById('sp-text').textContent = s.txt;
+  document.getElementById('sp').classList.remove('hidden');
+  step = i;
+  document.getElementById('btn-prev').disabled = (i === 0);
+  document.getElementById('btn-next').disabled = (i === STEPS.length - 1);
+  document.getElementById('btn-reset').style.display = 'inline-flex';
 }
 
-function togglePlay(){
-  playing=!playing;
-  const btn=document.getElementById('btn-start');
-  if(playing){
-    btn.innerHTML='⏸&nbsp; Pause';
-    btn.style.background='linear-gradient(135deg,#059669,#10b981)';
-    if(!window.ARCH_AUDIO){
-      if(timer)clearInterval(timer);
-      timer=setInterval(()=>{
-        if(cur<STEPS.length-1){step(cur+1);}
-        else{clearInterval(timer);timer=null;playing=false;resetBtn();}
-      },8500);
-    }
-    step(cur===STEPS.length-1?0:cur);
-  } else {
-    resetBtn();
-    if(timer){clearInterval(timer);timer=null;}
-    if(audio){audio.pause();}
-    document.getElementById('voice-ind').classList.remove('playing');
-  }
-}
-function resetBtn(){
-  const btn=document.getElementById('btn-start');
-  btn.innerHTML='▶&nbsp; Start Walkthrough';
-  btn.style.background='linear-gradient(135deg,#4f46e5,#7c3aed)';
+/* Play a step with pre-generated audio */
+function playStep(i) {
+  if (i >= STEPS.length) { playing = false; setBtnState('done'); return; }
+  applyStep(i);
+  if (aud) { aud.pause(); aud = null; }
+
+  aud = new Audio(AUDIO_URLS[i]);
+  aud.onended = () => {
+    vpOn(false);
+    if (playing && step < STEPS.length - 1) setTimeout(() => playStep(step + 1), 600);
+    else { playing = false; setBtnState('done'); }
+  };
+  aud.onerror = () => {
+    vpOn(false);
+    // fallback: auto-advance after reading time
+    const ms = Math.min(12000, STEPS[i].txt.length * 55);
+    if (playing) setTimeout(() => { if (playing) playStep(step + 1); }, ms);
+  };
+  vpOn(true);
+  setBtnState('playing');
+  aud.play().catch(() => {});
 }
 
-function scaleCanvas(){
-  const main=document.getElementById('main');
-  const d=document.getElementById('diagram');
-  const svg=document.getElementById('svg-layer');
-  const sx=main.clientWidth/1340;
-  const sy=main.clientHeight/690;
-  const sc=Math.min(sx,sy)*.97;
-  const t=`translate(-50%,-50%) scale(${sc})`;
-  d.style.transform=t;
-  svg.style.transform=t;
+function setBtnState(s) {
+  const btn = document.getElementById('btn-play');
+  if (s === 'playing')  { btn.textContent = 'Pause';    btn.disabled = false; btn.onclick = pauseWT; }
+  else if (s === 'done') { btn.textContent = 'Replay';   btn.disabled = false; btn.onclick = startWT; }
+  else if (s === 'paused') { btn.textContent = 'Resume'; btn.disabled = false; btn.onclick = resumeWT; }
 }
 
-document.addEventListener('keydown',e=>{
-  if(e.key==='ArrowRight'||e.key==='ArrowDown')step(cur+1);
-  if(e.key==='ArrowLeft'||e.key==='ArrowUp')step(cur-1);
-  if(e.key===' '){e.preventDefault();togglePlay();}
+function startWT()  { playing = true;  playStep(0); }
+function pauseWT()  { if (aud && !aud.paused) { aud.pause(); vpOn(false); } playing = false; setBtnState('paused'); }
+function resumeWT() { if (aud && aud.paused) { playing = true; aud.play(); vpOn(true); setBtnState('playing'); } else if (step >= 0) { playing = true; playStep(step); } }
+function go(dir)    { if (aud) { aud.pause(); aud = null; vpOn(false); } playing = true; playStep(step + dir); }
+function jump(i)    { if (aud) { aud.pause(); aud = null; vpOn(false); } playing = true; playStep(i); }
+
+function resetWT() {
+  if (aud) { aud.pause(); aud = null; }
+  vpOn(false); playing = false; step = -1;
+  clearAll();
+  document.getElementById('sp').classList.add('hidden');
+  document.getElementById('btn-reset').style.display = 'none';
+  document.getElementById('btn-prev').disabled = true;
+  document.getElementById('btn-next').disabled = true;
+  document.querySelectorAll('.dot').forEach(d => d.className = 'dot');
+  const btn = document.getElementById('btn-play');
+  btn.textContent = '▶ Start Walkthrough';
+  btn.disabled = false;
+  btn.onclick = startWT;
+}
+
+/* Keyboard nav */
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); if (step < STEPS.length - 1) go(1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); if (step > 0) go(-1); }
+  if (e.key === ' ') { e.preventDefault(); if (playing) pauseWT(); else if (step >= 0) resumeWT(); else startWT(); }
 });
-window.addEventListener('resize',scaleCanvas);
-
-/* ─── AUDIO URLS ─── */
-window.ARCH_AUDIO = [
-  "https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step1.mp3",
-  "https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step2.mp3",
-  "https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step3.mp3",
-  "https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step4.mp3",
-  "https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step5.mp3",
-  "https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step6.mp3",
-  "https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step7.mp3",
-  "https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step8.mp3",
-  "https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step9.mp3"
-];
-
-scaleCanvas();
 </script>
 </body>
 </html>
