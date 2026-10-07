@@ -2,366 +2,480 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>n8n Credential Broker — Symplytics × TradeStation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TradeStation — n8n Credential Broker Architecture</title>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{background:#070c18;color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;overflow:hidden;height:100vh;width:100vw}
-  #stage{position:relative;width:100vw;height:100vh;display:flex;flex-direction:column}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#070c18;--surface:#0f172a;--surface2:#1e293b;
+  --border:#1e3a5f;--text:#e2e8f0;--muted:#64748b;--dim:#334155;
+  --teal:#00d4b8;--purple:#a855f7;--green:#10b981;--blue:#3b82f6;
+  --amber:#f59e0b;--red:#ef4444;--indigo:#6366f1;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;height:100vh;width:100vw;overflow:hidden;display:flex;flex-direction:column;font-size:13px}
 
-  /* Header */
-  #header{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;border-bottom:1px solid rgba(99,102,241,.25);background:rgba(7,12,24,.9);backdrop-filter:blur(12px);z-index:10;flex-shrink:0}
-  #logo img{height:32px;object-fit:contain}
-  #title-block{text-align:center}
-  #title-block h1{font-size:15px;font-weight:600;color:#c7d2fe;letter-spacing:.04em}
-  #title-block p{font-size:11px;color:#64748b;margin-top:2px}
-  #audio-btn{background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:opacity .2s}
-  #audio-btn:hover{opacity:.85}
-  #audio-btn svg{width:14px;height:14px}
+/* ── TOP HEADER ── */
+#hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:rgba(7,12,24,.97);flex-shrink:0;gap:12px}
+#hdr-left{display:flex;align-items:center;gap:10px}
+#hdr-left img{height:28px}
+#hdr-left span{font-size:11px;color:var(--muted)}
+#hdr-center h1{font-size:18px;font-weight:700;color:var(--teal);letter-spacing:.02em;text-align:center}
+#hdr-center p{font-size:10px;color:var(--muted);text-align:center;margin-top:2px;letter-spacing:.08em}
+#hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.conf-badge{background:linear-gradient(135deg,#b45309,#d97706);color:#fff;font-size:9px;font-weight:800;padding:4px 10px;border-radius:4px;letter-spacing:.1em}
+#hdr-right span{font-size:9px;color:var(--muted)}
 
-  /* Canvas area */
-  #canvas-wrap{flex:1;position:relative;overflow:hidden}
-  #canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:1380px;height:860px;transform-origin:center center}
+/* ── NAV BAR ── */
+#nav{display:flex;align-items:center;padding:8px 20px;border-bottom:1px solid var(--border);background:rgba(7,12,24,.9);flex-shrink:0;gap:0}
+#btn-start{background:linear-gradient(135deg,var(--indigo),#8b5cf6);color:#fff;border:none;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap}
+#btn-start:hover{opacity:.85}
+.nav-arrow{background:transparent;color:var(--muted);border:1px solid var(--dim);padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;margin-left:8px}
+.nav-arrow:hover:not(:disabled){color:var(--text);border-color:var(--indigo)}
+.nav-arrow:disabled{opacity:.3;cursor:not-allowed}
+#dots{display:flex;gap:6px;margin:0 auto}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--dim);cursor:pointer;transition:all .25s}
+.dot.active{background:var(--indigo);transform:scale(1.35)}
+#voice-ind{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);white-space:nowrap}
+#voice-dot{width:7px;height:7px;border-radius:50%;background:#22c55e}
+#voice-ind.playing #voice-dot{animation:blink .8s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 
-  /* Cards */
-  .card{position:absolute;border-radius:12px;border:1.5px solid rgba(99,102,241,.3);background:rgba(15,23,42,.85);backdrop-filter:blur(8px);padding:14px 16px;transition:all .4s ease;cursor:default}
-  .card .card-icon{font-size:22px;margin-bottom:6px}
-  .card .card-title{font-size:12px;font-weight:700;color:#c7d2fe;margin-bottom:4px;letter-spacing:.03em}
-  .card .card-sub{font-size:10.5px;color:#64748b;line-height:1.5}
-  .card .tag{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:6px;letter-spacing:.05em}
+/* ── MAIN CANVAS ── */
+#main{flex:1;overflow:hidden;position:relative}
+#diagram{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);transform-origin:center center;width:1320px;height:700px;display:grid;grid-template-columns:230px 280px 280px 210px;grid-template-rows:1fr;gap:14px;align-items:start}
 
-  .card.highlight{border-color:#6366f1;background:rgba(99,102,241,.18);box-shadow:0 0 28px rgba(99,102,241,.45),0 0 0 1px rgba(99,102,241,.5)}
-  .card.dim{opacity:.32;filter:blur(0.5px)}
-  .card.active-step{border-color:#10b981;background:rgba(16,185,129,.12);box-shadow:0 0 24px rgba(16,185,129,.4)}
+/* ── COLUMN 1: Identity + EKS ── */
+#col1{display:flex;flex-direction:column;gap:10px;height:700px}
+.id-card{border-radius:10px;padding:12px;border:1.5px solid;transition:all .35s}
+.id-card.entra{border-color:rgba(59,130,246,.5);background:rgba(59,130,246,.08)}
+.id-card.cognito{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.08)}
+.id-card .ic-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px}
+.id-card .ic-label{font-size:9.5px;font-weight:700;letter-spacing:.07em;margin-bottom:6px}
+.id-card.entra .ic-label{color:#60a5fa}
+.id-card.cognito .ic-label{color:#fbbf24}
+.id-card .ic-sub{font-size:10px;color:var(--muted);line-height:1.6}
+.eks-cluster{flex:1;border:1.5px dashed rgba(0,212,184,.4);border-radius:12px;padding:10px;position:relative;display:flex;flex-direction:column;gap:6px}
+.section-label{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--teal);position:absolute;top:-8px;left:12px;background:var(--bg);padding:0 6px}
+.workflows-box{border:1px dashed var(--dim);border-radius:8px;padding:8px;flex:1;display:flex;flex-direction:column;gap:5px;position:relative;margin-top:10px}
+.wf-label{font-size:8.5px;font-weight:700;letter-spacing:.1em;color:var(--muted);position:absolute;top:-7px;left:10px;background:var(--bg);padding:0 5px}
+.wf-card{border-radius:7px;padding:9px 10px;display:flex;flex-direction:column;transition:all .35s;position:relative}
+.wf-card .wf-title{font-size:11.5px;font-weight:700;margin-bottom:2px}
+.wf-card .wf-sub{font-size:9.5px;opacity:.75}
+.wf-card .wf-tag{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:8.5px;color:var(--muted);font-weight:600}
+.wf-slack{background:rgba(168,85,247,.2);border:1px solid rgba(168,85,247,.5)}
+.wf-slack .wf-title{color:#c084fc}
+.wf-snow{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4)}
+.wf-snow .wf-title{color:#34d399}
+.wf-jira{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4)}
+.wf-jira .wf-title{color:#60a5fa}
+.wf-sp{background:rgba(30,64,175,.25);border:1px solid rgba(30,64,175,.5)}
+.wf-sp .wf-title{color:#93c5fd}
+.wf-future{background:transparent;border:1px dashed var(--dim)}
+.wf-future .wf-title{color:var(--dim);font-style:italic;font-size:10.5px}
+.no-creds{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);border-radius:7px;padding:7px 10px;font-size:9.5px;color:#fcd34d;margin-top:4px}
+.no-creds strong{color:#f59e0b}
 
-  /* Arrow overlays */
-  #arrows{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
-  .arrow-path{stroke-dasharray:8 4;stroke-dashoffset:0;animation:dash 1.2s linear infinite}
-  @keyframes dash{to{stroke-dashoffset:-24}}
-  .arrow-path.inactive{animation:none;opacity:.15}
+/* ── COLUMN 2: Broker ── */
+#col2{display:flex;flex-direction:column;justify-content:center;height:700px}
+.broker-card{border-radius:12px;border:1.5px solid rgba(99,102,241,.5);background:rgba(15,23,42,.9);padding:20px;transition:all .35s}
+.broker-title{font-size:17px;font-weight:800;color:var(--text);margin-bottom:16px}
+.broker-step{display:flex;align-items:flex-start;gap:10px;padding:9px 10px;border-radius:8px;margin-bottom:6px;transition:all .3s;cursor:default}
+.broker-step:last-child{margin-bottom:0}
+.broker-step .bs-num{width:20px;height:20px;border-radius:50%;background:rgba(99,102,241,.25);border:1px solid rgba(99,102,241,.4);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#a5b4fc;flex-shrink:0}
+.broker-step .bs-arrow{color:var(--indigo);font-size:10px;opacity:0;transition:opacity .2s;flex-shrink:0;margin-top:3px}
+.broker-step .bs-text{font-size:11.5px;color:var(--muted);line-height:1.5}
+.broker-step.active-bs{background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35)}
+.broker-step.active-bs .bs-arrow{opacity:1}
+.broker-step.active-bs .bs-text{color:var(--text)}
+.broker-step.active-bs .bs-num{background:var(--indigo);color:#fff;border-color:var(--indigo)}
+.token-warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:9px 12px;margin-top:12px;font-size:10.5px;color:#fcd34d;text-align:center}
 
-  /* Step panel */
-  #step-panel{position:absolute;left:32px;bottom:32px;width:340px;background:rgba(15,23,42,.92);border:1px solid rgba(99,102,241,.35);border-radius:14px;padding:20px;backdrop-filter:blur(16px);z-index:5}
-  #step-num{font-size:10px;font-weight:700;color:#6366f1;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
-  #step-title{font-size:16px;font-weight:700;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
-  #step-body{font-size:12px;color:#94a3b8;line-height:1.7}
-  #step-body strong{color:#c7d2fe}
+/* ── COLUMN 3: AWS Services ── */
+#col3{display:flex;flex-direction:column;gap:12px;height:700px;justify-content:center;position:relative}
+.aws-label{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--teal);margin-bottom:4px}
+.aws-card{border-radius:10px;background:rgba(15,23,42,.85);border:1.5px solid var(--border);padding:13px 14px;transition:all .35s}
+.aws-card .ac-title{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:6px}
+.aws-card .ac-items{display:flex;flex-direction:column;gap:3px}
+.aws-card .ac-item{font-size:10px;color:var(--muted);line-height:1.5;padding-left:8px;position:relative}
+.aws-card .ac-item::before{content:"·";position:absolute;left:0;color:var(--dim)}
+.aws-card.sm{border-color:rgba(239,68,68,.4)}
+.aws-card.sm .ac-title{color:#fca5a5}
+.aws-card.ddb{border-color:rgba(245,158,11,.4)}
+.aws-card.ddb .ac-title{color:#fcd34d}
+.aws-card.s3{border-color:rgba(16,185,129,.4)}
+.aws-card.s3 .ac-title{color:#6ee7b7}
 
-  /* Nav */
-  #nav{position:absolute;bottom:32px;right:32px;display:flex;gap:10px;z-index:10}
-  .nav-btn{background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);color:#c7d2fe;padding:10px 20px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
-  .nav-btn:hover{background:rgba(99,102,241,.4)}
-  .nav-btn:disabled{opacity:.3;cursor:not-allowed}
+/* ── COLUMN 4: Targets ── */
+#col4{display:flex;flex-direction:column;gap:10px;height:700px;justify-content:center;position:relative}
+.target-label{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--teal);margin-bottom:2px}
+.tgt-card{border-radius:10px;padding:11px 13px;transition:all .35s}
+.tgt-card .tc-title{font-size:13px;font-weight:700;margin-bottom:3px}
+.tgt-card .tc-sub{font-size:10px;opacity:.7;line-height:1.5}
+.tgt-badge{display:inline-block;font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:5px;letter-spacing:.06em}
+.tgt-slack{background:rgba(168,85,247,.2);border:1.5px solid rgba(168,85,247,.5)}
+.tgt-slack .tc-title{color:#c084fc}
+.tgt-slack .tgt-badge{background:rgba(168,85,247,.35);color:#e9d5ff}
+.tgt-snow{background:rgba(16,185,129,.12);border:1.5px solid rgba(16,185,129,.4)}
+.tgt-snow .tc-title{color:#34d399}
+.tgt-jira{background:rgba(59,130,246,.12);border:1.5px solid rgba(59,130,246,.4)}
+.tgt-jira .tc-title{color:#60a5fa}
+.tgt-sp{background:rgba(6,78,152,.2);border:1.5px solid rgba(6,78,152,.5)}
+.tgt-sp .tc-title{color:#93c5fd}
 
-  /* Progress dots */
-  #dots{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10}
-  .dot{width:7px;height:7px;border-radius:50%;background:rgba(99,102,241,.3);transition:all .3s;cursor:pointer}
-  .dot.active{background:#6366f1;transform:scale(1.3)}
+/* ── SVG ARROWS overlay ── */
+#svg-arrows{position:absolute;top:0;left:0;width:1320px;height:700px;pointer-events:none}
+.arr{stroke-dasharray:7 4;stroke-dashoffset:0;fill:none;stroke-width:1.5;transition:opacity .35s}
+.arr.on{animation:flow .9s linear infinite;opacity:.9}
+.arr.off{opacity:.1;animation:none}
+@keyframes flow{to{stroke-dashoffset:-22}}
+.arr-label{font-size:9px;fill:var(--muted);transition:opacity .35s}
+.arr-label.on{opacity:.9}
+.arr-label.off{opacity:.1}
 
-  /* Pulse anim for active step */
-  @keyframes pulse-ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.5);opacity:0}}
+/* ── Highlight / dim states ── */
+.card-hl{box-shadow:0 0 20px rgba(99,102,241,.5),0 0 0 1px rgba(99,102,241,.6) !important;border-color:rgba(99,102,241,.8) !important}
+.card-dim{opacity:.22 !important;filter:blur(.4px)}
+
+/* ── Step info panel ── */
+#step-info{position:absolute;bottom:16px;left:16px;width:280px;background:rgba(15,23,42,.95);border:1px solid rgba(99,102,241,.4);border-radius:12px;padding:16px;backdrop-filter:blur(12px);z-index:20}
+#si-num{font-size:9px;font-weight:700;color:var(--indigo);letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px}
+#si-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:7px;line-height:1.3}
+#si-body{font-size:11px;color:var(--muted);line-height:1.7}
+#si-body strong{color:#c7d2fe}
 </style>
 </head>
 <body>
-<div id="stage">
-  <div id="header">
-    <div id="logo"><img src="https://plain-apac-prod-public.komododecks.com/202610/06/oWxvfU0Mi8VOq1azJWpu/image.png" alt="Symplytics" onerror="this.style.display='none';document.getElementById('logo').textContent='Symplytics'"></div>
-    <div id="title-block">
-      <h1>n8n Credential Broker Architecture</h1>
-      <p>Zero-trust API access · AWS EKS · Audit-compliant</p>
-    </div>
-    <button id="audio-btn" onclick="toggleAudio()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-      AI Voice Presentation
-    </button>
+
+<!-- TOP HEADER -->
+<div id="hdr">
+  <div id="hdr-left">
+    <img src="https://plain-apac-prod-public.komododecks.com/202610/06/oWxvfU0Mi8VOq1azJWpu/image.png" alt="Symplytics" onerror="this.style.display='none'">
   </div>
-
-  <div id="canvas-wrap">
-    <div id="canvas">
-
-      <!-- ── CARDS ───────────────────────────────── -->
-
-      <!-- n8n Workflow -->
-      <div class="card" id="c-n8n" style="left:30px;top:320px;width:180px">
-        <div class="card-icon">⚙️</div>
-        <div class="card-title">n8n Workflow</div>
-        <div class="card-sub">Triggers with JWT only.<br>Zero stored credentials.</div>
-        <span class="tag" style="background:rgba(99,102,241,.25);color:#a5b4fc">EKS Pod</span>
-      </div>
-
-      <!-- Credential Broker -->
-      <div class="card" id="c-broker" style="left:350px;top:290px;width:210px">
-        <div class="card-icon">🛡️</div>
-        <div class="card-title">Credential Broker</div>
-        <div class="card-sub">Validates JWT, resolves permissions, fetches secret at runtime, executes API.</div>
-        <span class="tag" style="background:rgba(16,185,129,.2);color:#6ee7b7">Core Service</span>
-      </div>
-
-      <!-- Entra ID -->
-      <div class="card" id="c-entra" style="left:200px;top:80px;width:190px">
-        <div class="card-icon">🔵</div>
-        <div class="card-title">Microsoft Entra ID</div>
-        <div class="card-sub">JWKS endpoint for SharePoint & Exchange. Sites.Selected scope.</div>
-        <span class="tag" style="background:rgba(59,130,246,.2);color:#93c5fd">Identity</span>
-      </div>
-
-      <!-- Cognito -->
-      <div class="card" id="c-cognito" style="left:200px;top:530px;width:190px">
-        <div class="card-icon">🟠</div>
-        <div class="card-title">AWS Cognito</div>
-        <div class="card-sub">JWKS for Slack, ServiceNow, Jira. Non-Microsoft targets.</div>
-        <span class="tag" style="background:rgba(251,146,60,.2);color:#fdba74">Identity</span>
-      </div>
-
-      <!-- DynamoDB -->
-      <div class="card" id="c-dynamo" style="left:640px;top:120px;width:200px">
-        <div class="card-icon">📋</div>
-        <div class="card-title">DynamoDB Permissions</div>
-        <div class="card-sub">EntraGroup → Target → Methods → Endpoints. Runtime ACL check.</div>
-        <span class="tag" style="background:rgba(245,158,11,.2);color:#fcd34d">ACL</span>
-      </div>
-
-      <!-- Secrets Manager -->
-      <div class="card" id="c-secrets" style="left:640px;top:480px;width:200px">
-        <div class="card-icon">🔐</div>
-        <div class="card-title">AWS Secrets Manager</div>
-        <div class="card-sub">IRSA · tmpfs via CSI/ASCP. AWSCURRENT/AWSPENDING rotation. 401 invalidation.</div>
-        <span class="tag" style="background:rgba(239,68,68,.2);color:#fca5a5">Secrets</span>
-      </div>
-
-      <!-- Target APIs -->
-      <div class="card" id="c-targets" style="left:970px;top:200px;width:200px">
-        <div class="card-icon">🌐</div>
-        <div class="card-title">Target APIs</div>
-        <div class="card-sub">SharePoint · Exchange<br>Slack · ServiceNow<br>Jira · Custom REST</div>
-        <span class="tag" style="background:rgba(99,102,241,.2);color:#a5b4fc">External</span>
-      </div>
-
-      <!-- Audit S3 -->
-      <div class="card" id="c-audit" style="left:970px;top:530px;width:200px">
-        <div class="card-icon">📜</div>
-        <div class="card-title">S3 WORM Audit Log</div>
-        <div class="card-sub">Object Lock Compliance. SHA-256 hash · traceparent. SEC 17a-4(f) · FINRA 4511.</div>
-        <span class="tag" style="background:rgba(16,185,129,.2);color:#6ee7b7">Compliance</span>
-      </div>
-
-      <!-- EKS Infra -->
-      <div class="card" id="c-eks" style="left:350px;top:700px;width:210px">
-        <div class="card-icon">☸️</div>
-        <div class="card-title">AWS EKS / Helm</div>
-        <div class="card-sub">Production cluster. Namespace isolation. IRSA for pod-level IAM. Helm chart managed.</div>
-        <span class="tag" style="background:rgba(99,102,241,.2);color:#a5b4fc">Infra</span>
-      </div>
-
-      <!-- SVG Arrows -->
-      <svg id="arrows" viewBox="0 0 1380 860">
-        <defs>
-          <marker id="ah-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6366f1"/></marker>
-          <marker id="ah-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#10b981"/></marker>
-          <marker id="ah-amber" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f59e0b"/></marker>
-          <marker id="ah-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/></marker>
-        </defs>
-        <!-- n8n → Broker -->
-        <path id="a-n8n-broker" class="arrow-path inactive" d="M210,380 L350,380" stroke="#6366f1" stroke-width="2" fill="none" marker-end="url(#ah-blue)"/>
-        <!-- Broker → Entra -->
-        <path id="a-broker-entra" class="arrow-path inactive" d="M455,290 L455,200 L390,180" stroke="#6366f1" stroke-width="2" fill="none" marker-end="url(#ah-blue)"/>
-        <!-- Broker → Cognito -->
-        <path id="a-broker-cognito" class="arrow-path inactive" d="M455,490 L455,580 L390,580" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#ah-amber)"/>
-        <!-- Broker → DynamoDB -->
-        <path id="a-broker-dynamo" class="arrow-path inactive" d="M560,330 L640,220" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#ah-amber)"/>
-        <!-- Broker → Secrets -->
-        <path id="a-broker-secrets" class="arrow-path inactive" d="M560,420 L640,530" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#ah-red)"/>
-        <!-- Broker → Targets -->
-        <path id="a-broker-targets" class="arrow-path inactive" d="M560,390 L970,320" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#ah-green)"/>
-        <!-- Broker → Audit -->
-        <path id="a-broker-audit" class="arrow-path inactive" d="M560,430 L970,600" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#ah-green)"/>
-        <!-- Broker → EKS -->
-        <path id="a-broker-eks" class="arrow-path inactive" d="M455,500 L455,700" stroke="#6366f1" stroke-width="2" fill="none" marker-end="url(#ah-blue)"/>
-      </svg>
-
-    </div><!-- /canvas -->
-  </div><!-- /canvas-wrap -->
-
-  <!-- Step Panel -->
-  <div id="step-panel">
-    <div id="step-num">STEP 1 OF 9</div>
-    <div id="step-title">n8n Workflow Initiates Request</div>
-    <div id="step-body">The n8n workflow pod running in <strong>AWS EKS</strong> triggers an API call. It holds only a <strong>short-lived JWT</strong> — no API keys, no service account passwords stored anywhere in the workflow.</div>
+  <div id="hdr-center">
+    <h1>TradeStation — n8n Credential Broker Architecture</h1>
+    <p>SYMPLYTICS &nbsp;·&nbsp; PREPARED BY YASH SHRIVASTAVA, ENTERPRISE ARCHITECT &nbsp;·&nbsp; OCTOBER 2026</p>
   </div>
-
-  <!-- Progress dots -->
-  <div id="dots"></div>
-
-  <!-- Nav -->
-  <div id="nav">
-    <button class="nav-btn" id="btn-prev" onclick="goStep(currentStep-1)" disabled>← Prev</button>
-    <button class="nav-btn" id="btn-next" onclick="goStep(currentStep+1)">Next →</button>
+  <div id="hdr-right">
+    <div class="conf-badge">CONFIDENTIAL &amp; PROPRIETARY</div>
+    <span>Engagement Start: Oct 2026 &nbsp;|&nbsp; POC: 5-Day Delivery</span>
   </div>
 </div>
 
+<!-- NAV BAR -->
+<div id="nav">
+  <button id="btn-start" onclick="togglePlay()">▶ Start Walkthrough</button>
+  <button class="nav-arrow" id="btn-prev" onclick="goStep(cur-1)" disabled>◀ Prev</button>
+  <button class="nav-arrow" id="btn-next" onclick="goStep(cur+1)">Next ▶</button>
+  <div id="dots"></div>
+  <div id="voice-ind">
+    <div id="voice-dot"></div>
+    <span id="voice-lbl">ElevenLabs · Rachel · AI Voice</span>
+  </div>
+</div>
+
+<!-- MAIN DIAGRAM -->
+<div id="main">
+<div id="diagram">
+
+  <!-- ── COL 1: Identity Providers + EKS ── -->
+  <div id="col1">
+    <div class="id-card entra" id="c-entra">
+      <div class="ic-label">IDENTITY PROVIDER</div>
+      <div class="ic-title">Microsoft Entra ID</div>
+      <div class="ic-sub">JWKS Endpoint – Microsoft targets<br>SharePoint · Exchange · Office 365</div>
+    </div>
+    <div class="id-card cognito" id="c-cognito">
+      <div class="ic-label">IDENTITY PROVIDER</div>
+      <div class="ic-title">AWS Cognito</div>
+      <div class="ic-sub">JWKS Endpoint – Non-Microsoft<br>Slack · ServiceNow · Jira</div>
+    </div>
+    <div class="eks-cluster" id="c-eks">
+      <span class="section-label">AWS EKS CLUSTER</span>
+      <div class="workflows-box">
+        <span class="wf-label">N8N WORKFLOWS</span>
+        <div class="wf-card wf-slack" id="c-wf-slack">
+          <div class="wf-title">Slack Workflow</div>
+          <div class="wf-sub">per-department automation</div>
+          <span class="wf-tag">HTTP+JWT</span>
+        </div>
+        <div class="wf-card wf-snow" id="c-wf-snow">
+          <div class="wf-title">ServiceNow Workflow</div>
+          <div class="wf-sub">incident / ticket automation</div>
+          <span class="wf-tag">HTTP+JWT</span>
+        </div>
+        <div class="wf-card wf-jira" id="c-wf-jira">
+          <div class="wf-title">Jira Workflow</div>
+          <div class="wf-sub">issue / project automation</div>
+          <span class="wf-tag">HTTP+JWT</span>
+        </div>
+        <div class="wf-card wf-sp" id="c-wf-sp">
+          <div class="wf-title">SharePoint Workflow</div>
+          <div class="wf-sub">document automation</div>
+          <span class="wf-tag">HTTP+JWT</span>
+        </div>
+        <div class="wf-card wf-future">
+          <div class="wf-title">Future workflows…</div>
+        </div>
+      </div>
+      <div class="no-creds">No credentials in n8n &nbsp;·&nbsp; <strong>Short-lived JWT only</strong></div>
+    </div>
+  </div>
+
+  <!-- ── COL 2: Credential Broker ── -->
+  <div id="col2">
+    <div class="broker-card" id="c-broker">
+      <div class="broker-title">Credential Broker Service</div>
+      <div class="broker-step" id="bs-1">
+        <div class="bs-num">1</div>
+        <div class="bs-arrow">▶</div>
+        <div class="bs-text">Validate JWT (RSA256 / JWKS)</div>
+      </div>
+      <div class="broker-step" id="bs-2">
+        <div class="bs-num">2</div>
+        <div class="bs-arrow">▶</div>
+        <div class="bs-text">Check Permission Table (DynamoDB)</div>
+      </div>
+      <div class="broker-step" id="bs-3">
+        <div class="bs-num">3</div>
+        <div class="bs-arrow">▶</div>
+        <div class="bs-text">Fetch secret at runtime</div>
+      </div>
+      <div class="broker-step" id="bs-4">
+        <div class="bs-num">4</div>
+        <div class="bs-arrow">▶</div>
+        <div class="bs-text">Execute downstream API call</div>
+      </div>
+      <div class="broker-step" id="bs-5">
+        <div class="bs-num">5</div>
+        <div class="bs-arrow">▶</div>
+        <div class="bs-text">Write audit record to S3 WORM</div>
+      </div>
+      <div class="token-warn">Token passthrough prevented – JWTs never forwarded</div>
+    </div>
+  </div>
+
+  <!-- ── COL 3: AWS Services ── -->
+  <div id="col3">
+    <div class="aws-label">AWS SERVICES</div>
+    <div class="aws-card sm" id="c-sm">
+      <div class="ac-title">AWS Secrets Manager</div>
+      <div class="ac-items">
+        <div class="ac-item">IRSA – no static keys</div>
+        <div class="ac-item">AWSCURRENT / AWSPENDING labels</div>
+        <div class="ac-item">tmpfs mount via CSI + ASCP</div>
+        <div class="ac-item">Auto-rotation on 401</div>
+      </div>
+    </div>
+    <div class="aws-card ddb" id="c-ddb">
+      <div class="ac-title">DynamoDB Permission Table</div>
+      <div class="ac-items">
+        <div class="ac-item">EntraGroup to Target System</div>
+        <div class="ac-item">Allowed HTTP Methods</div>
+        <div class="ac-item">Allowed Endpoints (ACL)</div>
+      </div>
+    </div>
+    <div class="aws-card s3" id="c-s3">
+      <div class="ac-title">S3 Object Lock – WORM</div>
+      <div class="ac-items">
+        <div class="ac-item">Compliance Mode (FINRA 4511)</div>
+        <div class="ac-item">SEC 17a-4(f) compliant</div>
+        <div class="ac-item">JSON + SHA-256 payload hash</div>
+        <div class="ac-item">W3C traceparent header</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── COL 4: Target Systems ── -->
+  <div id="col4">
+    <div class="target-label">TARGET SYSTEMS</div>
+    <div class="tgt-card tgt-slack" id="c-tgt-slack">
+      <div class="tc-title">Slack</div>
+      <div class="tc-sub">Per-department scoped token</div>
+      <span class="tgt-badge">PRIMARY USE CASE</span>
+    </div>
+    <div class="tgt-card tgt-snow" id="c-tgt-snow">
+      <div class="tc-title">ServiceNow</div>
+      <div class="tc-sub">OAuth 2.0 Client Credentials<br>Scoped ACLs · exp backoff</div>
+    </div>
+    <div class="tgt-card tgt-jira" id="c-tgt-jira">
+      <div class="tc-title">Jira</div>
+      <div class="tc-sub">OAuth 2.0 3LO<br>read:jira-work / write:jira-work</div>
+    </div>
+    <div class="tgt-card tgt-sp" id="c-tgt-sp">
+      <div class="tc-title">SharePoint Online</div>
+      <div class="tc-sub">Sites.Selected scope<br>Zero-access default; per-site grant</div>
+    </div>
+  </div>
+
+  <!-- ── SVG Arrows ── -->
+  <svg id="svg-arrows" viewBox="0 0 1320 700" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="mh-ind" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L7,2.5 z" fill="#6366f1"/></marker>
+      <marker id="mh-grn" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L7,2.5 z" fill="#10b981"/></marker>
+      <marker id="mh-amb" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L7,2.5 z" fill="#f59e0b"/></marker>
+      <marker id="mh-red" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L7,2.5 z" fill="#ef4444"/></marker>
+    </defs>
+    <!-- Workflows → Broker -->
+    <path id="a-wf-broker" class="arr off" d="M228,390 L250,390" stroke="#6366f1" marker-end="url(#mh-ind)"/>
+    <text id="al-wf" class="arr-label off" x="233" y="383">HTTP+JWT</text>
+    <!-- Broker → Entra -->
+    <path id="a-entra" class="arr off" d="M250,200 L228,140" stroke="#3b82f6" marker-end="url(#mh-ind)"/>
+    <text id="al-entra" class="arr-label off" x="218" y="180">JWKS validate</text>
+    <!-- Broker → Cognito -->
+    <path id="a-cognito" class="arr off" d="M250,420 L228,250" stroke="#f59e0b" marker-end="url(#mh-amb)"/>
+    <text id="al-cognito" class="arr-label off" x="214" y="345">JWKS validate</text>
+    <!-- Broker → SecretsManager -->
+    <path id="a-sm" class="arr off" d="M528,310 L790,200" stroke="#ef4444" marker-end="url(#mh-red)"/>
+    <text id="al-sm" class="arr-label off" x="620" y="240">fetch secret</text>
+    <!-- Broker → DynamoDB -->
+    <path id="a-ddb" class="arr off" d="M528,370 L790,390" stroke="#f59e0b" marker-end="url(#mh-amb)"/>
+    <text id="al-ddb" class="arr-label off" x="628" y="368">permission</text>
+    <!-- Broker → S3 -->
+    <path id="a-s3" class="arr off" d="M528,420 L790,530" stroke="#10b981" marker-end="url(#mh-grn)"/>
+    <text id="al-s3" class="arr-label off" x="610" y="490">audit (WORM)</text>
+    <!-- SM → Targets -->
+    <path id="a-sm-tgt" class="arr off" d="M1068,180 L1108,260" stroke="#6366f1" marker-end="url(#mh-ind)"/>
+    <text id="al-sm-tgt" class="arr-label off" x="1068" y="225">scoped API call</text>
+    <!-- DDB → Targets -->
+    <path id="a-ddb-tgt" class="arr off" d="M1068,390 L1108,390" stroke="#6366f1" marker-end="url(#mh-ind)"/>
+    <text id="al-ddb-tgt" class="arr-label off" x="1068" y="378">scoped API call</text>
+    <!-- SM → Targets (Jira/SP) -->
+    <path id="a-sm-tgt2" class="arr off" d="M1068,200 L1108,500" stroke="#6366f1" marker-end="url(#mh-ind)"/>
+    <text id="al-sm-tgt2" class="arr-label off" x="1070" y="370">scoped API call</text>
+  </svg>
+
+</div><!-- /diagram -->
+
+<!-- Step info panel -->
+<div id="step-info" style="display:none">
+  <div id="si-num">STEP 1 OF 9</div>
+  <div id="si-title"></div>
+  <div id="si-body"></div>
+</div>
+</div><!-- /main -->
+
 <script>
-const STEPS = [
-  {
-    num:"STEP 1 OF 9",
-    title:"n8n Workflow Initiates Request",
-    body:"The n8n workflow pod running in <strong>AWS EKS</strong> triggers an API call. It holds only a <strong>short-lived JWT</strong> — no API keys, no service account passwords stored anywhere in the workflow.",
-    highlight:["c-n8n"],
-    arrows:["a-n8n-broker"]
-  },
-  {
-    num:"STEP 2 OF 9",
-    title:"JWT Validation via JWKS",
-    body:"The Credential Broker receives the JWT and validates it against the appropriate <strong>JWKS endpoint</strong>. <strong>Microsoft Entra ID</strong> handles SharePoint/Exchange requests; <strong>AWS Cognito</strong> handles Slack, ServiceNow, and Jira.",
-    highlight:["c-broker","c-entra","c-cognito"],
-    arrows:["a-n8n-broker","a-broker-entra","a-broker-cognito"]
-  },
-  {
-    num:"STEP 3 OF 9",
-    title:"Permission Check — DynamoDB ACL",
-    body:"Post-validation, the broker queries the <strong>DynamoDB Permission Table</strong>: EntraGroup → Target System → Allowed HTTP Methods → Allowed Endpoint patterns. Deny-by-default — only explicitly listed combinations are permitted.",
-    highlight:["c-broker","c-dynamo"],
-    arrows:["a-broker-dynamo"]
-  },
-  {
-    num:"STEP 4 OF 9",
-    title:"Runtime Secret Fetch — Secrets Manager",
-    body:"The broker retrieves credentials from <strong>AWS Secrets Manager</strong> using <strong>IRSA</strong> (pod-level IAM). Secrets are mounted via <strong>CSI Driver + ASCP</strong> onto a tmpfs volume — never written to disk. Supports AWSCURRENT/AWSPENDING rotation.",
-    highlight:["c-broker","c-secrets"],
-    arrows:["a-broker-secrets"]
-  },
-  {
-    num:"STEP 5 OF 9",
-    title:"API Call Execution",
-    body:"With validated identity, authorised permissions, and a runtime-fetched credential, the broker executes the API call to the <strong>target system</strong> on the workflow's behalf. The <strong>n8n workflow never touches the credential</strong>.",
-    highlight:["c-broker","c-targets"],
-    arrows:["a-broker-targets"]
-  },
-  {
-    num:"STEP 6 OF 9",
-    title:"WORM Audit Record Written",
-    body:"Every brokered call writes an immutable audit record to <strong>S3 Object Lock (Compliance Mode)</strong>. Each record includes a <strong>SHA-256 payload hash</strong> and <strong>W3C traceparent</strong> for full lineage. Satisfies <strong>SEC 17a-4(f)</strong> and <strong>FINRA 4511</strong>.",
-    highlight:["c-broker","c-audit"],
-    arrows:["a-broker-audit"]
-  },
-  {
-    num:"STEP 7 OF 9",
-    title:"Response Returns to Workflow",
-    body:"The API response is returned to the n8n workflow. The workflow receives clean data — no credentials, no tokens. From its perspective, it made a simple function call to the broker.",
-    highlight:["c-n8n","c-broker","c-targets"],
-    arrows:["a-broker-targets","a-n8n-broker"]
-  },
-  {
-    num:"STEP 8 OF 9",
-    title:"Automatic Cache Invalidation on 401",
-    body:"If a target returns a <strong>401 Unauthorized</strong>, the broker automatically invalidates the cached secret and retries by fetching <strong>AWSPENDING</strong> from Secrets Manager. Handles key rotation transparently with zero workflow downtime.",
-    highlight:["c-secrets","c-targets"],
-    arrows:["a-broker-secrets","a-broker-targets"]
-  },
-  {
-    num:"STEP 9 OF 9",
-    title:"Production Infrastructure — EKS & Helm",
-    body:"The entire stack runs on <strong>AWS EKS</strong> managed via <strong>Helm charts</strong>. Namespace isolation between broker and workflows. <strong>IRSA</strong> binds IAM roles at the pod level. <strong>Sites.Selected</strong> scope limits SharePoint exposure to only specified site collections.",
-    highlight:["c-eks","c-broker","c-n8n"],
-    arrows:["a-broker-eks","a-n8n-broker"]
-  }
+const STEPS=[
+  {num:"STEP 1 OF 9",title:"Architecture Overview",body:"The <strong>n8n Credential Broker</strong> pattern eliminates stored credentials from automation workflows entirely. Every API call is brokered through a central service that validates identity, checks permissions, and fetches secrets at runtime.",
+   hl:[],bs:0,arrows:[],reset:true},
+  {num:"STEP 2 OF 9",title:"n8n Workflows Send JWT Requests",body:"Workflow pods running in <strong>AWS EKS</strong> fire HTTP requests to the Credential Broker carrying only a <strong>short-lived JWT</strong>. No API keys. No passwords. No service account credentials anywhere in the workflow config.",
+   hl:["c-eks","c-wf-slack","c-wf-snow","c-wf-jira","c-wf-sp","c-broker"],bs:0,arrows:["a-wf-broker"]},
+  {num:"STEP 3 OF 9",title:"JWT Validation via JWKS",body:"The broker validates the JWT signature against a <strong>JWKS endpoint</strong>. <strong>Microsoft Entra ID</strong> handles SharePoint and Exchange tokens. <strong>AWS Cognito</strong> handles Slack, ServiceNow, and Jira.",
+   hl:["c-broker","c-entra","c-cognito"],bs:1,arrows:["a-entra","a-cognito"]},
+  {num:"STEP 4 OF 9",title:"Permission Check — DynamoDB ACL",body:"The broker queries the <strong>DynamoDB Permission Table</strong>: EntraGroup → Target System → Allowed HTTP Methods → Allowed Endpoints. Deny-by-default — only explicitly configured combinations are permitted.",
+   hl:["c-broker","c-ddb"],bs:2,arrows:["a-ddb"]},
+  {num:"STEP 5 OF 9",title:"Runtime Secret Fetch via IRSA",body:"Credentials are retrieved from <strong>AWS Secrets Manager</strong> using <strong>IRSA</strong> (pod-level IAM role). Secrets are mounted to a <strong>tmpfs volume via CSI Driver + ASCP</strong> — they never touch disk and are never visible to the workflow.",
+   hl:["c-broker","c-sm"],bs:3,arrows:["a-sm"]},
+  {num:"STEP 6 OF 9",title:"Execute Downstream API Call",body:"With a validated identity, an authorised permission set, and a runtime-fetched credential, the broker executes the API call on the workflow's behalf. The <strong>n8n workflow never holds or sees the credential</strong>.",
+   hl:["c-broker","c-tgt-slack","c-tgt-snow","c-tgt-jira","c-tgt-sp"],bs:4,arrows:["a-sm-tgt","a-ddb-tgt","a-sm-tgt2"]},
+  {num:"STEP 7 OF 9",title:"WORM Audit Record — S3 Object Lock",body:"Every brokered call writes an immutable record to <strong>S3 Object Lock Compliance Mode</strong>. Each entry carries a <strong>SHA-256 payload hash</strong> and <strong>W3C traceparent</strong> header for full lineage. Satisfies <strong>SEC 17a-4(f)</strong> and <strong>FINRA 4511</strong>.",
+   hl:["c-broker","c-s3"],bs:5,arrows:["a-s3"]},
+  {num:"STEP 8 OF 9",title:"Automatic 401 Cache Invalidation",body:"If a downstream API returns <strong>401 Unauthorized</strong>, the broker automatically invalidates the cached secret and retries by fetching <strong>AWSPENDING</strong> from Secrets Manager. Key rotation is handled transparently with <strong>zero workflow downtime</strong>.",
+   hl:["c-sm","c-tgt-slack","c-tgt-snow","c-tgt-jira","c-tgt-sp"],bs:3,arrows:["a-sm","a-sm-tgt","a-ddb-tgt"]},
+  {num:"STEP 9 OF 9",title:"Production Deployment — EKS + Helm",body:"The full stack runs on <strong>AWS EKS</strong> managed via <strong>Helm charts</strong>. Namespace isolation between broker and workflows. <strong>IRSA</strong> binds IAM roles at the pod level. <strong>Sites.Selected</strong> scope limits SharePoint to only specified site collections.",
+   hl:["c-eks","c-broker","c-sm","c-ddb","c-s3"],bs:0,arrows:[],reset:true}
 ];
 
-let currentStep = 0;
-let autoTimer = null;
-let audioPlaying = false;
+const ALL_CARDS=["c-entra","c-cognito","c-eks","c-wf-slack","c-wf-snow","c-wf-jira","c-wf-sp","c-broker","c-sm","c-ddb","c-s3","c-tgt-slack","c-tgt-snow","c-tgt-jira","c-tgt-sp"];
+const ALL_ARROWS=["a-wf-broker","a-entra","a-cognito","a-sm","a-ddb","a-s3","a-sm-tgt","a-ddb-tgt","a-sm-tgt2"];
+const ALL_LABELS=["al-wf","al-entra","al-cognito","al-sm","al-ddb","al-s3","al-sm-tgt","al-ddb-tgt","al-sm-tgt2"];
+const ALL_BS=["bs-1","bs-2","bs-3","bs-4","bs-5"];
 
-const allCards = ["c-n8n","c-broker","c-entra","c-cognito","c-dynamo","c-secrets","c-targets","c-audit","c-eks"];
-const allArrows = ["a-n8n-broker","a-broker-entra","a-broker-cognito","a-broker-dynamo","a-broker-secrets","a-broker-targets","a-broker-audit","a-broker-eks"];
+let cur=0, playing=false, timer=null, audioObj=null;
 
 // Build dots
-const dotsEl = document.getElementById("dots");
-STEPS.forEach((_,i)=>{
-  const d = document.createElement("div");
-  d.className = "dot" + (i===0?" active":"");
-  d.onclick = ()=>goStep(i);
-  dotsEl.appendChild(d);
-});
+const dotsEl=document.getElementById("dots");
+STEPS.forEach((_,i)=>{const d=document.createElement("div");d.className="dot"+(i===0?" active":"");d.onclick=()=>goStep(i);dotsEl.appendChild(d);});
 
 function goStep(n){
-  if(n<0||n>=STEPS.length) return;
-  currentStep = n;
-  const s = STEPS[n];
+  if(n<0||n>=STEPS.length)return;
+  cur=n;
+  const s=STEPS[n];
 
-  // Update panel
-  document.getElementById("step-num").textContent = s.num;
-  document.getElementById("step-title").textContent = s.title;
-  document.getElementById("step-body").innerHTML = s.body;
+  // Panel
+  const panel=document.getElementById("step-info");
+  if(playing||n>0){
+    panel.style.display="block";
+    document.getElementById("si-num").textContent=s.num;
+    document.getElementById("si-title").textContent=s.title;
+    document.getElementById("si-body").innerHTML=s.body;
+  }
 
-  // Update cards
-  allCards.forEach(id=>{
-    const el = document.getElementById(id);
-    el.classList.remove("highlight","dim","active-step");
-    if(s.highlight.includes(id)){
-      el.classList.add("highlight");
-    } else {
-      el.classList.add("dim");
-    }
-  });
+  // Reset broker steps
+  ALL_BS.forEach(id=>document.getElementById(id).classList.remove("active-bs"));
+  if(s.bs>0) document.getElementById("bs-"+s.bs).classList.add("active-bs");
 
-  // Update arrows
-  allArrows.forEach(id=>{
-    const el = document.getElementById(id);
-    if(el){
-      el.classList.remove("inactive");
-      if(!s.arrows.includes(id)) el.classList.add("inactive");
-    }
-  });
+  // Cards
+  if(s.reset||s.hl.length===0){
+    ALL_CARDS.forEach(id=>{const el=document.getElementById(id);if(el){el.classList.remove("card-hl","card-dim");}});
+  } else {
+    ALL_CARDS.forEach(id=>{const el=document.getElementById(id);if(!el)return;el.classList.remove("card-hl","card-dim");if(s.hl.includes(id)){el.classList.add("card-hl");}else{el.classList.add("card-dim");}});
+  }
+
+  // Arrows
+  ALL_ARROWS.forEach(id=>{const el=document.getElementById(id);if(el){el.classList.remove("on","off");el.classList.add(s.arrows.includes(id)?"on":"off");}});
+  ALL_LABELS.forEach((id,i)=>{const el=document.getElementById(id);if(el){el.classList.remove("on","off");el.classList.add(s.arrows.includes(ALL_ARROWS[i])?"on":"off");}});
 
   // Dots
-  document.querySelectorAll(".dot").forEach((d,i)=>{
-    d.classList.toggle("active", i===n);
-  });
+  document.querySelectorAll(".dot").forEach((d,i)=>d.classList.toggle("active",i===n));
 
   // Buttons
-  document.getElementById("btn-prev").disabled = (n===0);
-  document.getElementById("btn-next").disabled = (n===STEPS.length-1);
+  document.getElementById("btn-prev").disabled=(n===0);
+  document.getElementById("btn-next").disabled=(n===STEPS.length-1);
 
-  // Scale canvas to viewport
+  // Audio
+  if(window.ARCH_AUDIO&&window.ARCH_AUDIO[n]){
+    if(audioObj){audioObj.pause();audioObj=null;}
+    audioObj=new Audio(window.ARCH_AUDIO[n]);
+    audioObj.play();
+    document.getElementById("voice-ind").classList.add("playing");
+    audioObj.onended=()=>{
+      document.getElementById("voice-ind").classList.remove("playing");
+      if(playing&&cur<STEPS.length-1) setTimeout(()=>goStep(cur+1),600);
+    };
+  }
+
   scaleCanvas();
 }
 
-function scaleCanvas(){
-  const wrap = document.getElementById("canvas-wrap");
-  const canvas = document.getElementById("canvas");
-  const scaleX = wrap.clientWidth / 1380;
-  const scaleY = wrap.clientHeight / 860;
-  const scale = Math.min(scaleX, scaleY) * 0.96;
-  canvas.style.transform = `translate(-50%,-50%) scale(${scale})`;
-}
-
-// Keyboard nav
-document.addEventListener("keydown", e=>{
-  if(e.key==="ArrowRight"||e.key==="ArrowDown") goStep(currentStep+1);
-  if(e.key==="ArrowLeft"||e.key==="ArrowUp") goStep(currentStep-1);
-});
-
-window.addEventListener("resize", scaleCanvas);
-
-// Audio
-function toggleAudio(){
-  if(window.ARCH_AUDIO && window.ARCH_AUDIO[currentStep]){
-    const audio = new Audio(window.ARCH_AUDIO[currentStep]);
-    audio.play();
-    audio.onended = ()=>{ if(currentStep<STEPS.length-1){ setTimeout(()=>goStep(currentStep+1),600); } };
-    audioPlaying = true;
+function togglePlay(){
+  playing=!playing;
+  const btn=document.getElementById("btn-start");
+  if(playing){
+    btn.textContent="⏸ Pause";
+    btn.style.background="linear-gradient(135deg,#10b981,#059669)";
+    if(!window.ARCH_AUDIO){
+      timer=setInterval(()=>{
+        if(cur<STEPS.length-1){goStep(cur+1);}
+        else{clearInterval(timer);playing=false;btn.textContent="▶ Start Walkthrough";btn.style.background="linear-gradient(135deg,#6366f1,#8b5cf6)";}
+      },8000);
+    }
+    goStep(cur===STEPS.length-1?0:cur);
   } else {
-    // Auto-advance fallback
-    if(autoTimer){ clearInterval(autoTimer); autoTimer=null; document.getElementById("audio-btn").style.background="linear-gradient(135deg,#6366f1,#8b5cf6)"; return; }
-    document.getElementById("audio-btn").style.background="linear-gradient(135deg,#10b981,#059669)";
-    autoTimer = setInterval(()=>{
-      if(currentStep<STEPS.length-1){ goStep(currentStep+1); }
-      else { clearInterval(autoTimer); autoTimer=null; document.getElementById("audio-btn").style.background="linear-gradient(135deg,#6366f1,#8b5cf6)"; }
-    },8000);
+    btn.textContent="▶ Start Walkthrough";
+    btn.style.background="linear-gradient(135deg,#6366f1,#8b5cf6)";
+    if(timer){clearInterval(timer);timer=null;}
+    if(audioObj){audioObj.pause();}
+    document.getElementById("voice-ind").classList.remove("playing");
   }
 }
 
-// Init
-goStep(0);
+function scaleCanvas(){
+  const main=document.getElementById("main");
+  const d=document.getElementById("diagram");
+  const sx=main.clientWidth/1320;
+  const sy=main.clientHeight/700;
+  const sc=Math.min(sx,sy)*0.97;
+  d.style.transform=`translate(-50%,-50%) scale(${sc})`;
+}
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight"||e.key==="ArrowDown")goStep(cur+1);
+  if(e.key==="ArrowLeft"||e.key==="ArrowUp")goStep(cur-1);
+  if(e.key===" "){e.preventDefault();togglePlay();}
+});
+window.addEventListener("resize",scaleCanvas);
+scaleCanvas();
 </script>
 </body>
 </html>
