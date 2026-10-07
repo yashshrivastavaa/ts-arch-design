@@ -1,18 +1,367 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Loading…</title>
-<style>body{background:#070c18;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;flex-direction:column}p{color:#60a5fa;font-family:sans-serif;font-size:14px;margin:0}#err{color:#f87171;font-family:monospace;font-size:12px;margin-top:8px;display:none}</style></head>
-<body><p>Loading presentation…</p><span id="err"></span><script>
-(function(){try{const b="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";
-const bin=atob(b),arr=new Uint8Array(bin.length);
-for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
-const ds=new DecompressionStream("gzip");
-const textPromise=new Response(ds.readable).text();
-const wr=ds.writable.getWriter();
-wr.write(arr).then(function(){return wr.close();});
-textPromise.then(function(h){
-const blob=new Blob([h],{type:"text/html;charset=utf-8"});
-location.replace(URL.createObjectURL(blob));
-}).catch(function(e){document.getElementById("err").textContent="Decomp error: "+e;document.getElementById("err").style.display="block";});
-}catch(e){document.getElementById("err").textContent="Init error: "+e;document.getElementById("err").style.display="block";}
-})();
-</script></body></html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>n8n Credential Broker — Symplytics × TradeStation</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#070c18;color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;overflow:hidden;height:100vh;width:100vw}
+  #stage{position:relative;width:100vw;height:100vh;display:flex;flex-direction:column}
+
+  /* Header */
+  #header{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;border-bottom:1px solid rgba(99,102,241,.25);background:rgba(7,12,24,.9);backdrop-filter:blur(12px);z-index:10;flex-shrink:0}
+  #logo img{height:32px;object-fit:contain}
+  #title-block{text-align:center}
+  #title-block h1{font-size:15px;font-weight:600;color:#c7d2fe;letter-spacing:.04em}
+  #title-block p{font-size:11px;color:#64748b;margin-top:2px}
+  #audio-btn{background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:opacity .2s}
+  #audio-btn:hover{opacity:.85}
+  #audio-btn svg{width:14px;height:14px}
+
+  /* Canvas area */
+  #canvas-wrap{flex:1;position:relative;overflow:hidden}
+  #canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:1380px;height:860px;transform-origin:center center}
+
+  /* Cards */
+  .card{position:absolute;border-radius:12px;border:1.5px solid rgba(99,102,241,.3);background:rgba(15,23,42,.85);backdrop-filter:blur(8px);padding:14px 16px;transition:all .4s ease;cursor:default}
+  .card .card-icon{font-size:22px;margin-bottom:6px}
+  .card .card-title{font-size:12px;font-weight:700;color:#c7d2fe;margin-bottom:4px;letter-spacing:.03em}
+  .card .card-sub{font-size:10.5px;color:#64748b;line-height:1.5}
+  .card .tag{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:6px;letter-spacing:.05em}
+
+  .card.highlight{border-color:#6366f1;background:rgba(99,102,241,.18);box-shadow:0 0 28px rgba(99,102,241,.45),0 0 0 1px rgba(99,102,241,.5)}
+  .card.dim{opacity:.32;filter:blur(0.5px)}
+  .card.active-step{border-color:#10b981;background:rgba(16,185,129,.12);box-shadow:0 0 24px rgba(16,185,129,.4)}
+
+  /* Arrow overlays */
+  #arrows{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+  .arrow-path{stroke-dasharray:8 4;stroke-dashoffset:0;animation:dash 1.2s linear infinite}
+  @keyframes dash{to{stroke-dashoffset:-24}}
+  .arrow-path.inactive{animation:none;opacity:.15}
+
+  /* Step panel */
+  #step-panel{position:absolute;left:32px;bottom:32px;width:340px;background:rgba(15,23,42,.92);border:1px solid rgba(99,102,241,.35);border-radius:14px;padding:20px;backdrop-filter:blur(16px);z-index:5}
+  #step-num{font-size:10px;font-weight:700;color:#6366f1;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+  #step-title{font-size:16px;font-weight:700;color:#e2e8f0;margin-bottom:8px;line-height:1.3}
+  #step-body{font-size:12px;color:#94a3b8;line-height:1.7}
+  #step-body strong{color:#c7d2fe}
+
+  /* Nav */
+  #nav{position:absolute;bottom:32px;right:32px;display:flex;gap:10px;z-index:10}
+  .nav-btn{background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.4);color:#c7d2fe;padding:10px 20px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+  .nav-btn:hover{background:rgba(99,102,241,.4)}
+  .nav-btn:disabled{opacity:.3;cursor:not-allowed}
+
+  /* Progress dots */
+  #dots{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10}
+  .dot{width:7px;height:7px;border-radius:50%;background:rgba(99,102,241,.3);transition:all .3s;cursor:pointer}
+  .dot.active{background:#6366f1;transform:scale(1.3)}
+
+  /* Pulse anim for active step */
+  @keyframes pulse-ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.5);opacity:0}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="header">
+    <div id="logo"><img src="https://plain-apac-prod-public.komododecks.com/202610/06/oWxvfU0Mi8VOq1azJWpu/image.png" alt="Symplytics" onerror="this.style.display='none';document.getElementById('logo').textContent='Symplytics'"></div>
+    <div id="title-block">
+      <h1>n8n Credential Broker Architecture</h1>
+      <p>Zero-trust API access · AWS EKS · Audit-compliant</p>
+    </div>
+    <button id="audio-btn" onclick="toggleAudio()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      AI Voice Presentation
+    </button>
+  </div>
+
+  <div id="canvas-wrap">
+    <div id="canvas">
+
+      <!-- ── CARDS ───────────────────────────────── -->
+
+      <!-- n8n Workflow -->
+      <div class="card" id="c-n8n" style="left:30px;top:320px;width:180px">
+        <div class="card-icon">⚙️</div>
+        <div class="card-title">n8n Workflow</div>
+        <div class="card-sub">Triggers with JWT only.<br>Zero stored credentials.</div>
+        <span class="tag" style="background:rgba(99,102,241,.25);color:#a5b4fc">EKS Pod</span>
+      </div>
+
+      <!-- Credential Broker -->
+      <div class="card" id="c-broker" style="left:350px;top:290px;width:210px">
+        <div class="card-icon">🛡️</div>
+        <div class="card-title">Credential Broker</div>
+        <div class="card-sub">Validates JWT, resolves permissions, fetches secret at runtime, executes API.</div>
+        <span class="tag" style="background:rgba(16,185,129,.2);color:#6ee7b7">Core Service</span>
+      </div>
+
+      <!-- Entra ID -->
+      <div class="card" id="c-entra" style="left:200px;top:80px;width:190px">
+        <div class="card-icon">🔵</div>
+        <div class="card-title">Microsoft Entra ID</div>
+        <div class="card-sub">JWKS endpoint for SharePoint & Exchange. Sites.Selected scope.</div>
+        <span class="tag" style="background:rgba(59,130,246,.2);color:#93c5fd">Identity</span>
+      </div>
+
+      <!-- Cognito -->
+      <div class="card" id="c-cognito" style="left:200px;top:530px;width:190px">
+        <div class="card-icon">🟠</div>
+        <div class="card-title">AWS Cognito</div>
+        <div class="card-sub">JWKS for Slack, ServiceNow, Jira. Non-Microsoft targets.</div>
+        <span class="tag" style="background:rgba(251,146,60,.2);color:#fdba74">Identity</span>
+      </div>
+
+      <!-- DynamoDB -->
+      <div class="card" id="c-dynamo" style="left:640px;top:120px;width:200px">
+        <div class="card-icon">📋</div>
+        <div class="card-title">DynamoDB Permissions</div>
+        <div class="card-sub">EntraGroup → Target → Methods → Endpoints. Runtime ACL check.</div>
+        <span class="tag" style="background:rgba(245,158,11,.2);color:#fcd34d">ACL</span>
+      </div>
+
+      <!-- Secrets Manager -->
+      <div class="card" id="c-secrets" style="left:640px;top:480px;width:200px">
+        <div class="card-icon">🔐</div>
+        <div class="card-title">AWS Secrets Manager</div>
+        <div class="card-sub">IRSA · tmpfs via CSI/ASCP. AWSCURRENT/AWSPENDING rotation. 401 invalidation.</div>
+        <span class="tag" style="background:rgba(239,68,68,.2);color:#fca5a5">Secrets</span>
+      </div>
+
+      <!-- Target APIs -->
+      <div class="card" id="c-targets" style="left:970px;top:200px;width:200px">
+        <div class="card-icon">🌐</div>
+        <div class="card-title">Target APIs</div>
+        <div class="card-sub">SharePoint · Exchange<br>Slack · ServiceNow<br>Jira · Custom REST</div>
+        <span class="tag" style="background:rgba(99,102,241,.2);color:#a5b4fc">External</span>
+      </div>
+
+      <!-- Audit S3 -->
+      <div class="card" id="c-audit" style="left:970px;top:530px;width:200px">
+        <div class="card-icon">📜</div>
+        <div class="card-title">S3 WORM Audit Log</div>
+        <div class="card-sub">Object Lock Compliance. SHA-256 hash · traceparent. SEC 17a-4(f) · FINRA 4511.</div>
+        <span class="tag" style="background:rgba(16,185,129,.2);color:#6ee7b7">Compliance</span>
+      </div>
+
+      <!-- EKS Infra -->
+      <div class="card" id="c-eks" style="left:350px;top:700px;width:210px">
+        <div class="card-icon">☸️</div>
+        <div class="card-title">AWS EKS / Helm</div>
+        <div class="card-sub">Production cluster. Namespace isolation. IRSA for pod-level IAM. Helm chart managed.</div>
+        <span class="tag" style="background:rgba(99,102,241,.2);color:#a5b4fc">Infra</span>
+      </div>
+
+      <!-- SVG Arrows -->
+      <svg id="arrows" viewBox="0 0 1380 860">
+        <defs>
+          <marker id="ah-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6366f1"/></marker>
+          <marker id="ah-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#10b981"/></marker>
+          <marker id="ah-amber" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f59e0b"/></marker>
+          <marker id="ah-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/></marker>
+        </defs>
+        <!-- n8n → Broker -->
+        <path id="a-n8n-broker" class="arrow-path inactive" d="M210,380 L350,380" stroke="#6366f1" stroke-width="2" fill="none" marker-end="url(#ah-blue)"/>
+        <!-- Broker → Entra -->
+        <path id="a-broker-entra" class="arrow-path inactive" d="M455,290 L455,200 L390,180" stroke="#6366f1" stroke-width="2" fill="none" marker-end="url(#ah-blue)"/>
+        <!-- Broker → Cognito -->
+        <path id="a-broker-cognito" class="arrow-path inactive" d="M455,490 L455,580 L390,580" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#ah-amber)"/>
+        <!-- Broker → DynamoDB -->
+        <path id="a-broker-dynamo" class="arrow-path inactive" d="M560,330 L640,220" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#ah-amber)"/>
+        <!-- Broker → Secrets -->
+        <path id="a-broker-secrets" class="arrow-path inactive" d="M560,420 L640,530" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#ah-red)"/>
+        <!-- Broker → Targets -->
+        <path id="a-broker-targets" class="arrow-path inactive" d="M560,390 L970,320" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#ah-green)"/>
+        <!-- Broker → Audit -->
+        <path id="a-broker-audit" class="arrow-path inactive" d="M560,430 L970,600" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#ah-green)"/>
+        <!-- Broker → EKS -->
+        <path id="a-broker-eks" class="arrow-path inactive" d="M455,500 L455,700" stroke="#6366f1" stroke-width="2" fill="none" marker-end="url(#ah-blue)"/>
+      </svg>
+
+    </div><!-- /canvas -->
+  </div><!-- /canvas-wrap -->
+
+  <!-- Step Panel -->
+  <div id="step-panel">
+    <div id="step-num">STEP 1 OF 9</div>
+    <div id="step-title">n8n Workflow Initiates Request</div>
+    <div id="step-body">The n8n workflow pod running in <strong>AWS EKS</strong> triggers an API call. It holds only a <strong>short-lived JWT</strong> — no API keys, no service account passwords stored anywhere in the workflow.</div>
+  </div>
+
+  <!-- Progress dots -->
+  <div id="dots"></div>
+
+  <!-- Nav -->
+  <div id="nav">
+    <button class="nav-btn" id="btn-prev" onclick="goStep(currentStep-1)" disabled>← Prev</button>
+    <button class="nav-btn" id="btn-next" onclick="goStep(currentStep+1)">Next →</button>
+  </div>
+</div>
+
+<script>
+const STEPS = [
+  {
+    num:"STEP 1 OF 9",
+    title:"n8n Workflow Initiates Request",
+    body:"The n8n workflow pod running in <strong>AWS EKS</strong> triggers an API call. It holds only a <strong>short-lived JWT</strong> — no API keys, no service account passwords stored anywhere in the workflow.",
+    highlight:["c-n8n"],
+    arrows:["a-n8n-broker"]
+  },
+  {
+    num:"STEP 2 OF 9",
+    title:"JWT Validation via JWKS",
+    body:"The Credential Broker receives the JWT and validates it against the appropriate <strong>JWKS endpoint</strong>. <strong>Microsoft Entra ID</strong> handles SharePoint/Exchange requests; <strong>AWS Cognito</strong> handles Slack, ServiceNow, and Jira.",
+    highlight:["c-broker","c-entra","c-cognito"],
+    arrows:["a-n8n-broker","a-broker-entra","a-broker-cognito"]
+  },
+  {
+    num:"STEP 3 OF 9",
+    title:"Permission Check — DynamoDB ACL",
+    body:"Post-validation, the broker queries the <strong>DynamoDB Permission Table</strong>: EntraGroup → Target System → Allowed HTTP Methods → Allowed Endpoint patterns. Deny-by-default — only explicitly listed combinations are permitted.",
+    highlight:["c-broker","c-dynamo"],
+    arrows:["a-broker-dynamo"]
+  },
+  {
+    num:"STEP 4 OF 9",
+    title:"Runtime Secret Fetch — Secrets Manager",
+    body:"The broker retrieves credentials from <strong>AWS Secrets Manager</strong> using <strong>IRSA</strong> (pod-level IAM). Secrets are mounted via <strong>CSI Driver + ASCP</strong> onto a tmpfs volume — never written to disk. Supports AWSCURRENT/AWSPENDING rotation.",
+    highlight:["c-broker","c-secrets"],
+    arrows:["a-broker-secrets"]
+  },
+  {
+    num:"STEP 5 OF 9",
+    title:"API Call Execution",
+    body:"With validated identity, authorised permissions, and a runtime-fetched credential, the broker executes the API call to the <strong>target system</strong> on the workflow's behalf. The <strong>n8n workflow never touches the credential</strong>.",
+    highlight:["c-broker","c-targets"],
+    arrows:["a-broker-targets"]
+  },
+  {
+    num:"STEP 6 OF 9",
+    title:"WORM Audit Record Written",
+    body:"Every brokered call writes an immutable audit record to <strong>S3 Object Lock (Compliance Mode)</strong>. Each record includes a <strong>SHA-256 payload hash</strong> and <strong>W3C traceparent</strong> for full lineage. Satisfies <strong>SEC 17a-4(f)</strong> and <strong>FINRA 4511</strong>.",
+    highlight:["c-broker","c-audit"],
+    arrows:["a-broker-audit"]
+  },
+  {
+    num:"STEP 7 OF 9",
+    title:"Response Returns to Workflow",
+    body:"The API response is returned to the n8n workflow. The workflow receives clean data — no credentials, no tokens. From its perspective, it made a simple function call to the broker.",
+    highlight:["c-n8n","c-broker","c-targets"],
+    arrows:["a-broker-targets","a-n8n-broker"]
+  },
+  {
+    num:"STEP 8 OF 9",
+    title:"Automatic Cache Invalidation on 401",
+    body:"If a target returns a <strong>401 Unauthorized</strong>, the broker automatically invalidates the cached secret and retries by fetching <strong>AWSPENDING</strong> from Secrets Manager. Handles key rotation transparently with zero workflow downtime.",
+    highlight:["c-secrets","c-targets"],
+    arrows:["a-broker-secrets","a-broker-targets"]
+  },
+  {
+    num:"STEP 9 OF 9",
+    title:"Production Infrastructure — EKS & Helm",
+    body:"The entire stack runs on <strong>AWS EKS</strong> managed via <strong>Helm charts</strong>. Namespace isolation between broker and workflows. <strong>IRSA</strong> binds IAM roles at the pod level. <strong>Sites.Selected</strong> scope limits SharePoint exposure to only specified site collections.",
+    highlight:["c-eks","c-broker","c-n8n"],
+    arrows:["a-broker-eks","a-n8n-broker"]
+  }
+];
+
+let currentStep = 0;
+let autoTimer = null;
+let audioPlaying = false;
+
+const allCards = ["c-n8n","c-broker","c-entra","c-cognito","c-dynamo","c-secrets","c-targets","c-audit","c-eks"];
+const allArrows = ["a-n8n-broker","a-broker-entra","a-broker-cognito","a-broker-dynamo","a-broker-secrets","a-broker-targets","a-broker-audit","a-broker-eks"];
+
+// Build dots
+const dotsEl = document.getElementById("dots");
+STEPS.forEach((_,i)=>{
+  const d = document.createElement("div");
+  d.className = "dot" + (i===0?" active":"");
+  d.onclick = ()=>goStep(i);
+  dotsEl.appendChild(d);
+});
+
+function goStep(n){
+  if(n<0||n>=STEPS.length) return;
+  currentStep = n;
+  const s = STEPS[n];
+
+  // Update panel
+  document.getElementById("step-num").textContent = s.num;
+  document.getElementById("step-title").textContent = s.title;
+  document.getElementById("step-body").innerHTML = s.body;
+
+  // Update cards
+  allCards.forEach(id=>{
+    const el = document.getElementById(id);
+    el.classList.remove("highlight","dim","active-step");
+    if(s.highlight.includes(id)){
+      el.classList.add("highlight");
+    } else {
+      el.classList.add("dim");
+    }
+  });
+
+  // Update arrows
+  allArrows.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){
+      el.classList.remove("inactive");
+      if(!s.arrows.includes(id)) el.classList.add("inactive");
+    }
+  });
+
+  // Dots
+  document.querySelectorAll(".dot").forEach((d,i)=>{
+    d.classList.toggle("active", i===n);
+  });
+
+  // Buttons
+  document.getElementById("btn-prev").disabled = (n===0);
+  document.getElementById("btn-next").disabled = (n===STEPS.length-1);
+
+  // Scale canvas to viewport
+  scaleCanvas();
+}
+
+function scaleCanvas(){
+  const wrap = document.getElementById("canvas-wrap");
+  const canvas = document.getElementById("canvas");
+  const scaleX = wrap.clientWidth / 1380;
+  const scaleY = wrap.clientHeight / 860;
+  const scale = Math.min(scaleX, scaleY) * 0.96;
+  canvas.style.transform = `translate(-50%,-50%) scale(${scale})`;
+}
+
+// Keyboard nav
+document.addEventListener("keydown", e=>{
+  if(e.key==="ArrowRight"||e.key==="ArrowDown") goStep(currentStep+1);
+  if(e.key==="ArrowLeft"||e.key==="ArrowUp") goStep(currentStep-1);
+});
+
+window.addEventListener("resize", scaleCanvas);
+
+// Audio
+function toggleAudio(){
+  if(window.ARCH_AUDIO && window.ARCH_AUDIO[currentStep]){
+    const audio = new Audio(window.ARCH_AUDIO[currentStep]);
+    audio.play();
+    audio.onended = ()=>{ if(currentStep<STEPS.length-1){ setTimeout(()=>goStep(currentStep+1),600); } };
+    audioPlaying = true;
+  } else {
+    // Auto-advance fallback
+    if(autoTimer){ clearInterval(autoTimer); autoTimer=null; document.getElementById("audio-btn").style.background="linear-gradient(135deg,#6366f1,#8b5cf6)"; return; }
+    document.getElementById("audio-btn").style.background="linear-gradient(135deg,#10b981,#059669)";
+    autoTimer = setInterval(()=>{
+      if(currentStep<STEPS.length-1){ goStep(currentStep+1); }
+      else { clearInterval(autoTimer); autoTimer=null; document.getElementById("audio-btn").style.background="linear-gradient(135deg,#6366f1,#8b5cf6)"; }
+    },8000);
+  }
+}
+
+// Init
+goStep(0);
+</script>
+</body>
+</html>
