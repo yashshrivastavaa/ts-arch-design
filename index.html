@@ -10,7 +10,7 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 
 /* ── HEADER ── */
 .hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 28px 14px;background:rgba(255,255,255,.025);border-bottom:1px solid rgba(255,255,255,.07);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
-.hdr-logo img{height:30px;filter:brightness(1.15)}
+.hdr-logo img{height:30px}
 .hdr-center h1{font-size:18px;font-weight:800;letter-spacing:-.025em;text-align:center;background:linear-gradient(90deg,#60a5fa,#a78bfa,#34d399,#60a5fa);background-size:300% auto;animation:grad 5s linear infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 @keyframes grad{to{background-position:300% center}}
 .hdr-center p{font-size:9.5px;color:rgba(255,255,255,.3);text-align:center;letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
@@ -31,9 +31,12 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 .dot.act{background:#60a5fa;transform:scale(1.5);box-shadow:0 0 8px rgba(96,165,250,.5)}
 .dot.done{background:rgba(96,165,250,.35)}
 .wt-right{display:flex;align-items:center;gap:8px;font-size:10px;color:rgba(255,255,255,.3);white-space:nowrap}
-.vpulse{width:7px;height:7px;border-radius:50%;background:#34d399;opacity:0;transition:opacity .3s}
+.vpulse{width:7px;height:7px;border-radius:50%;background:#34d399;opacity:0;transition:opacity .3s;flex-shrink:0}
 .vpulse.on{opacity:1;animation:vpulse 1s ease-in-out infinite}
 @keyframes vpulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.6);opacity:1}}
+.speed-wrap{display:flex;align-items:center;gap:5px;font-size:10px;color:rgba(255,255,255,.35)}
+.speed-wrap select{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.65);font-size:10px;padding:3px 6px;border-radius:5px;cursor:pointer;outline:none}
+.speed-wrap select:hover{background:rgba(255,255,255,.12)}
 
 /* ── STEP PANEL ── */
 .step-panel{padding:10px 28px;background:rgba(96,165,250,.05);border-bottom:1px solid rgba(96,165,250,.1);min-height:54px;transition:opacity .3s,min-height .3s}
@@ -43,7 +46,7 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 
 /* ── CANVAS ── */
 .outer{width:100%;overflow:hidden;background:#070c18}
-.canvas-wrap{position:relative;width:1380px;height:980px;transform-origin:top left}
+.canvas-wrap{position:relative;width:1380px;height:980px;transform-origin:top center}
 
 /* Zone backgrounds */
 .z{position:absolute;border-radius:18px;pointer-events:none;z-index:1}
@@ -126,7 +129,7 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 .al{font-size:9px;fill:rgba(155,195,240,.5);font-family:-apple-system,sans-serif}
 
 /* ── LEGEND ── */
-.legend{display:flex;gap:20px;justify-content:center;padding:14px 20px 24px;flex-wrap:wrap}
+.legend{display:flex;gap:20px;justify-content:center;padding:8px 20px 10px;flex-wrap:wrap}
 .leg{display:flex;align-items:center;gap:7px;font-size:10px;color:rgba(255,255,255,.38)}
 .lsq{width:13px;height:13px;border-radius:3px}
 </style>
@@ -135,7 +138,7 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 
 <!-- HEADER -->
 <div class="hdr">
-  <div class="hdr-logo"><img src="https://plain-apac-prod-public.komododecks.com/202610/06/oWxvfU0Mi8VOq1azJWpu/image.png" alt="Symplytics" onerror="this.style.display='none'"></div>
+  <div class="hdr-logo"><img src="https://symplytics.com/brand/logos/logo-white.svg" alt="Symplytics" onerror="this.style.display='none'"></div>
   <div class="hdr-center">
     <h1>TradeStation — n8n Credential Broker Architecture</h1>
     <p>Symplytics &nbsp;·&nbsp; Prepared by Yash Shrivastava, Enterprise Architect &nbsp;·&nbsp; October 2026</p>
@@ -153,7 +156,17 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
   <button class="wt-btn sec" id="btn-next" onclick="go(1)" disabled>Next &#9654;</button>
   <div class="dots-row" id="dots"></div>
   <button class="wt-btn sec" id="btn-reset" onclick="resetWT()" style="display:none">&#10005; Reset</button>
-  <div class="wt-right"><span class="vpulse" id="vpulse"></span>&nbsp;ElevenLabs &middot; Rachel &middot; AI Voice</div>
+  <div class="speed-wrap">
+    Speed:
+    <select id="speed-sel" onchange="setSpeed(this.value)">
+      <option value="0.75">0.75×</option>
+      <option value="1" selected>1×</option>
+      <option value="1.25">1.25×</option>
+      <option value="1.5">1.5×</option>
+      <option value="2">2×</option>
+    </select>
+  </div>
+  <div class="wt-right"><span class="vpulse" id="vpulse"></span>&nbsp;AI Voice</div>
 </div>
 
 <!-- STEP INFO PANEL -->
@@ -383,16 +396,24 @@ STEPS.forEach((_,i) => {
   dotsEl.appendChild(d);
 });
 
-/* Responsive scale */
+/* Responsive scale — fill full width */
 function scale() {
   const cw    = document.getElementById('cw');
   const outer = document.getElementById('outer');
-  const s = Math.min(1, outer.offsetWidth / 1380);
+  const s = outer.offsetWidth / 1380;
   cw.style.transform = 'scale(' + s + ')';
+  cw.style.marginLeft = '0';
   outer.style.height = (980 * s) + 'px';
 }
 window.addEventListener('resize', scale);
 scale();
+
+/* Playback speed */
+let playbackRate = 1;
+function setSpeed(v) {
+  playbackRate = parseFloat(v);
+  if (aud) aud.playbackRate = playbackRate;
+}
 
 /* vpulse */
 function vpOn(on) { document.getElementById('vpulse').classList.toggle('on', on); }
@@ -437,6 +458,7 @@ function playStep(i) {
   if (aud) { aud.pause(); aud = null; }
 
   aud = new Audio(AUDIO_URLS[i]);
+  aud.playbackRate = playbackRate;
   aud.onended = () => {
     vpOn(false);
     if (playing && step < STEPS.length - 1) setTimeout(() => playStep(step + 1), 600);
