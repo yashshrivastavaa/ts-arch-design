@@ -6,8 +6,10 @@
 const bin=atob(b),arr=new Uint8Array(bin.length);
 for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
 const ds=new DecompressionStream("gzip");
-const wr=ds.writable.getWriter();wr.write(arr);wr.close();
-new Response(ds.readable).text().then(function(h){
+const textPromise=new Response(ds.readable).text();
+const wr=ds.writable.getWriter();
+wr.write(arr).then(function(){return wr.close();});
+textPromise.then(function(h){
 const blob=new Blob([h],{type:"text/html;charset=utf-8"});
 location.replace(URL.createObjectURL(blob));
 }).catch(function(e){document.getElementById("err").textContent="Decomp error: "+e;document.getElementById("err").style.display="block";});
