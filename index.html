@@ -16,6 +16,7 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 .hdr-center p{font-size:9.5px;color:rgba(255,255,255,.3);text-align:center;letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
 .hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .badge-conf{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:4px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+.badge-date{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.04em}
 
 /* ── BOTTOM CONTROL BAR ── */
 .ctrl-bar{position:fixed;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 24px;background:rgba(7,12,24,.94);backdrop-filter:blur(14px);border-top:1px solid rgba(255,255,255,.06);z-index:200;flex-wrap:wrap}
@@ -135,13 +136,14 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 <div class="hdr">
   <div class="hdr-logo"><img src="https://symplytics.com/brand/logos/logo-white.svg" alt="Symplytics" onerror="this.style.display='none'"></div>
   <div class="hdr-center">
-    <h1>TradeStation &mdash; n8n Credential Broker Architecture</h1>
-    <p>Symplytics &nbsp;&middot;&nbsp; Prepared by Yash Shrivastava, Enterprise Architect &nbsp;&middot;&nbsp; October 2026</p>
+    <h1>TradeStation — n8n Credential Broker Architecture</h1>
+    <p>Symplytics &nbsp;·&nbsp; Prepared by Yash Shrivastava, Enterprise Architect &nbsp;·&nbsp; October 2026</p>
   </div>
   <div class="hdr-right">
     <span class="badge-conf">Confidential &amp; Proprietary</span>
   </div>
 </div>
+
 
 <!-- STEP INFO PANEL -->
 <div class="step-panel hidden" id="sp">
@@ -160,7 +162,7 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
   <div class="z z-n8n"></div>
 
   <!-- Zone labels -->
-  <div class="zl zl-eks">AWS EKS Cluster</div>
+  <div class="zl zl-eks">AWS EKS Cluster · Production (n8n.ai.tradestation.io)</div>
   <div class="zl zl-aws">AWS Services</div>
   <div class="zl zl-tgt">Target Systems</div>
   <div class="zl zl-n8n">n8n Workflows</div>
@@ -168,11 +170,11 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
   <!-- Identity providers -->
   <div class="c c-entra" id="entra">
     <span class="ct">Microsoft Entra ID</span>
-    <span class="cs">JWKS Endpoint &ndash; Microsoft targets<br>SharePoint &middot; Exchange &middot; Office 365</span>
+    <span class="cs">JWKS Endpoint – Microsoft targets<br>SharePoint · Exchange · Office 365</span>
   </div>
   <div class="c c-cog" id="cog">
     <span class="ct">AWS Cognito</span>
-    <span class="cs">JWKS Endpoint &ndash; Non-Microsoft<br>Slack &middot; ServiceNow &middot; Jira</span>
+    <span class="cs">JWKS Endpoint – Non-Microsoft<br>Slack · ServiceNow · Jira</span>
   </div>
 
   <!-- Workflows -->
@@ -180,37 +182,37 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
   <div class="c c-wf c-wf-snow"  id="wf-snow"><span class="ct">ServiceNow Workflow</span><span class="cs">incident / ticket automation</span></div>
   <div class="c c-wf c-wf-jira"  id="wf-jira"><span class="ct">Jira Workflow</span><span class="cs">issue / project automation</span></div>
   <div class="c c-wf c-wf-sp"    id="wf-sp"><span class="ct">SharePoint Workflow</span><span class="cs">document automation</span></div>
-  <div class="wf-fut" id="wf-fut">Future workflows&hellip;</div>
+  <div class="wf-fut" id="wf-fut">Future workflows…</div>
   <div class="no-creds" id="no-creds">No credentials in n8n<br><small style="font-size:9px;opacity:.7">Short-lived JWT only</small></div>
 
   <!-- Broker -->
   <div class="c c-broker" id="broker">
     <span class="ct">Credential Broker Service</span>
     <div class="bstep" id="bs1"><span class="bnum">1</span>Validate JWT (RSA256 / JWKS)</div>
-    <div class="bstep" id="bs2"><span class="bnum">2</span>Check Permission Table (DynamoDB)</div>
+    <div class="bstep" id="bs2"><span class="bnum">2</span>Check ACL Table (RDS PostgreSQL)</div>
     <div class="bstep" id="bs3"><span class="bnum">3</span>Fetch secret at runtime</div>
     <div class="bstep" id="bs4"><span class="bnum">4</span>Execute downstream API call</div>
     <div class="bstep" id="bs5"><span class="bnum">5</span>Write audit record to S3 WORM</div>
   </div>
-  <div class="no-pass" id="no-pass">&amp;#9888;&nbsp; Token passthrough prevented &ndash; JWTs never forwarded</div>
+  <div class="no-pass" id="no-pass">⚠&nbsp; Token passthrough prevented – JWTs never forwarded</div>
 
   <!-- AWS Services -->
   <div class="c c-sec" id="secrets">
     <span class="ct">AWS Secrets Manager</span>
-    <span class="cs">IRSA &ndash; no static keys<br>AWSCURRENT / AWSPENDING labels<br>tmpfs mount via CSI + ASCP<br>Auto-rotation on 401</span>
+    <span class="cs">Existing TS service · IRSA<br>AWSCURRENT / AWSPENDING labels<br>tmpfs mount via CSI + ASCP<br>Auto-rotation on 401</span>
   </div>
   <div class="c c-dyn" id="dynamo">
-    <span class="ct">DynamoDB Permission Table</span>
-    <span class="cs">EntraGroup &rarr; Target System<br>Allowed HTTP Methods<br>Allowed Endpoints (ACL)</span>
+    <span class="ct">RDS PostgreSQL · ACL Table</span>
+    <span class="cs">Existing TS RDS instance<br>EntraGroup → Target System<br>Allowed Methods · Endpoints</span>
   </div>
   <div class="c c-s3" id="s3">
-    <span class="ct">S3 Object Lock &ndash; WORM</span>
-    <span class="cs">Compliance Mode (FINRA 4511)<br>SEC 17a-4(f) compliant<br>JSON + SHA-256 payload hash<br>W3C traceparent header</span>
+    <span class="ct">S3 Object Lock – WORM</span>
+    <span class="cs">Existing TS S3 · Compliance Mode<br>SEC 17a-4(f) / FINRA 4511<br>JSON + SHA-256 payload hash<br>W3C traceparent header</span>
   </div>
 
   <!-- Target Systems -->
   <div class="c c-ts c-ts-slack" id="t-slack"><span class="ct">Slack</span><span class="cs">Per-department scoped token</span><span class="badge">Primary use case</span></div>
-  <div class="c c-ts c-ts-snow"  id="t-snow"><span class="ct">ServiceNow</span><span class="cs">OAuth 2.0 Client Credentials<br>Scoped ACLs &middot; exp backoff</span></div>
+  <div class="c c-ts c-ts-snow"  id="t-snow"><span class="ct">ServiceNow</span><span class="cs">OAuth 2.0 Client Credentials<br>Scoped ACLs · exp backoff</span></div>
   <div class="c c-ts c-ts-jira"  id="t-jira"><span class="ct">Jira</span><span class="cs">OAuth 2.0 3LO<br>read:jira-work / write:jira-work</span></div>
   <div class="c c-ts c-ts-sp"    id="t-sp"><span class="ct">SharePoint Online</span><span class="cs">Sites.Selected scope<br>Zero-access default; per-site grant</span></div>
 
@@ -232,7 +234,7 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <text class="al" x="280" y="143">JWKS validate</text>
     <path id="e-cog"   class="ad" stroke="rgba(251,191,36,.38)" d="M 425 108 C 425 158 528 138 528 198" marker-end="url(#md)"/>
     <text class="al" x="480" y="140">JWKS validate</text>
-    <!-- Workflows to Broker (curved) -->
+    <!-- Workflows → Broker (curved) -->
     <path id="e-wf-slack" class="af" stroke="rgba(216,72,216,.6)"  d="M 274 233 C 318 233 318 264 362 264" marker-end="url(#mw)"/>
     <text class="al" x="280" y="226">HTTP+JWT</text>
     <path id="e-wf-snow"  class="af" stroke="rgba(52,211,153,.55)" d="M 274 317 C 318 317 318 305 362 305" marker-end="url(#mw)"/>
@@ -241,14 +243,14 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <text class="al" x="280" y="394">HTTP+JWT</text>
     <path id="e-wf-sp"    class="af" stroke="rgba(56,189,248,.5)"  d="M 274 485 C 318 485 318 382 362 382" marker-end="url(#mw)"/>
     <text class="al" x="280" y="478">HTTP+JWT</text>
-    <!-- Broker to AWS Services (curved) -->
+    <!-- Broker → AWS Services (curved) -->
     <path id="e-bk-sec" class="af" stroke="rgba(251,146,60,.75)" d="M 674 248 C 722 248 722 228 770 228" marker-end="url(#mo)"/>
     <text class="al" x="718" y="233" text-anchor="middle">fetch secret</text>
     <path id="e-bk-dyn" class="af" stroke="rgba(129,140,248,.7)" d="M 674 324 C 722 324 722 378 770 378" marker-end="url(#mp)"/>
     <text class="al" x="718" y="348" text-anchor="middle">permission</text>
     <path id="e-bk-s3"  class="af" stroke="rgba(52,211,153,.65)" d="M 674 400 C 722 400 722 533 770 533" marker-end="url(#mg)"/>
     <text class="al" x="718" y="468" text-anchor="middle">audit (WORM)</text>
-    <!-- Broker to Target Systems (curved) -->
+    <!-- Broker → Target Systems (curved) -->
     <path id="e-bk-tslack" class="af" stroke="rgba(216,72,216,.52)"  d="M 674 252 C 875 252 875 168 1076 168" marker-end="url(#msl)"/>
     <text class="al" x="875" y="200" text-anchor="middle">scoped API call</text>
     <path id="e-bk-tsnow"  class="af" stroke="rgba(52,211,153,.52)"  d="M 674 328 C 875 328 875 348 1076 348" marker-end="url(#msn)"/>
@@ -281,17 +283,18 @@ body{background:#070c18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
   <div class="speed-wrap">
     Speed:
     <select id="speed-sel" onchange="setSpeed(this.value)">
-      <option value="0.75">0.75&times;</option>
-      <option value="1" selected>1&times;</option>
-      <option value="1.25">1.25&times;</option>
-      <option value="1.5">1.5&times;</option>
-      <option value="2">2&times;</option>
+      <option value="0.75">0.75×</option>
+      <option value="1" selected>1×</option>
+      <option value="1.25">1.25×</option>
+      <option value="1.5">1.5×</option>
+      <option value="2">2×</option>
     </select>
   </div>
   <button class="wt-btn sec" id="btn-reset" onclick="resetWT()" style="display:none">&#10005; Reset</button>
 </div>
 
 <script>
+/* ── Pre-generated audio (Supabase CDN, ElevenLabs Rachel) ── */
 const AUDIO_URLS = [
   'https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step1.mp3',
   'https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step2.mp3',
@@ -304,16 +307,70 @@ const AUDIO_URLS = [
   'https://mmqwxxknddlbenhoxphl.supabase.co/storage/v1/object/public/TS-ARCH/step9.mp3'
 ];
 
+/* ── 9-step walkthrough ── */
 const STEPS = [
-  { title:'Architecture Overview', txt:'The TradeStation n8n Credential Broker solves a critical enterprise security problem. Automation workflows need to call Slack, ServiceNow, Jira, and SharePoint — but storing credentials inside n8n creates credential sprawl, audit gaps, and serious compliance risks for a regulated financial institution. Symplytics designed a centralized broker pattern on AWS EKS that eliminates all credentials from the automation layer entirely.', cards:['broker'], arrows:[], hlClass:'hl', brokerStep:0 },
-  { title:'n8n Workflows — Zero Credentials', txt:'Inside the EKS cluster, four n8n workflows handle different domains: Slack for per-department automation, ServiceNow for incidents and tickets, Jira for project automation, and SharePoint for document flows. None of these workflows hold any credentials — they present only a short-lived JSON Web Token with each request. No keys. No passwords. No static secrets of any kind.', cards:['wf-slack','wf-snow','wf-jira','wf-sp','no-creds'], arrows:['e-wf-slack','e-wf-snow','e-wf-jira','e-wf-sp'], hlClass:'hl-violet', brokerStep:0 },
-  { title:'JWT Validation via JWKS', txt:'The Credential Broker immediately validates the token signature against a live JWKS endpoint. Microsoft Entra ID validates tokens for SharePoint and Exchange — AWS Cognito validates tokens for Slack, ServiceNow, and Jira. Both use RSA-256 signatures. An expired or tampered token is rejected here, before any secret is ever touched.', cards:['entra','cog','broker'], arrows:['e-entra','e-cog'], hlClass:'hl', brokerStep:1 },
-  { title:'Permission Check — DynamoDB ACL', txt:'After identity is confirmed, the broker queries the DynamoDB Permission Table. Every Entra group is mapped to which target systems it can reach, which HTTP methods it may use, and which endpoints are explicitly allowed. This is zero-trust enforcement — deny by default. Even a perfectly valid JWT cannot call any endpoint unless that combination has an explicit allow entry.', cards:['dynamo','broker'], arrows:['e-bk-dyn'], hlClass:'hl-purple', brokerStep:2 },
-  { title:'Runtime Secret Fetch via IRSA', txt:'Only after identity and permissions are verified does the broker retrieve the actual credential from AWS Secrets Manager. Access uses IRSA — IAM Roles for Service Accounts — binding a pod-level IAM role with no static keys anywhere in the system. Secrets mount to a tmpfs volume via CSI Driver and ASCP. They never touch persistent disk and are never visible to the workflow.', cards:['secrets','broker'], arrows:['e-bk-sec'], hlClass:'hl-warm', brokerStep:3 },
-  { title:'Execute Downstream API Call', txt:'With a validated identity, an authorised permission set, and a runtime-fetched credential, the broker executes the API call on behalf of the workflow. Slack receives per-department scoped bot tokens. ServiceNow connects via OAuth 2.0 Client Credentials. Jira uses OAuth 2.0 three-legged flow. SharePoint uses Sites.Selected scope. The n8n workflow never sees the credential — it only receives the result.', cards:['broker','t-slack','t-snow','t-jira','t-sp'], arrows:['e-bk-tslack','e-bk-tsnow','e-bk-tjira','e-bk-tsp'], hlClass:'hl-green', brokerStep:4 },
-  { title:'WORM Audit Record — S3 Object Lock', txt:'Every single brokered API call generates a structured JSON audit record written to S3 with Object Lock in Compliance mode — write-once, read-many, and tamper-proof. Each record includes the caller identity from the JWT, a SHA-256 hash of the full request payload, and a W3C traceparent header for end-to-end distributed tracing. This satisfies SEC Rule 17a-4(f) and FINRA Rule 4511 for financial-grade electronic record retention.', cards:['s3','broker'], arrows:['e-bk-s3'], hlClass:'hl-green', brokerStep:5 },
-  { title:'Automatic 401 — Key Rotation', txt:'If a downstream API returns 401 Unauthorized, the broker automatically invalidates its cached secret and retries using the AWSPENDING version from Secrets Manager. This transparent rotation means that during an active key rotation, workflows continue running with zero downtime and zero manual intervention. The staging label strategy decouples secret rotation from workflow availability entirely.', cards:['secrets','t-slack','t-snow','t-jira','t-sp'], arrows:['e-bk-sec','e-bk-tslack','e-bk-tsnow','e-bk-tjira','e-bk-tsp'], hlClass:'hl-warm', brokerStep:3 },
-  { title:'5-Day Proof of Concept — EKS + Helm', txt:'Symplytics delivers a working proof of concept in five days. The full stack runs on AWS EKS via Helm charts with namespace isolation between the broker and workflow pods. Phase one validates the complete broker pattern using the Slack per-department use case: JWT issuance via Cognito, permission check via DynamoDB, secret fetch from Secrets Manager, Slack API execution, and audit log write to S3 Object Lock. Phase two expands to ServiceNow and Jira.', cards:['broker','wf-slack','t-slack','secrets','dynamo','s3'], arrows:['e-wf-slack','e-bk-sec','e-bk-dyn','e-bk-s3','e-bk-tslack'], hlClass:'hl', brokerStep:0 }
+  {
+    title: 'Architecture Overview',
+    txt: 'The TradeStation n8n Credential Broker solves a critical enterprise security problem. Automation workflows need to call Slack, ServiceNow, Jira, and SharePoint — but storing credentials inside n8n creates credential sprawl, audit gaps, and serious compliance risks for a regulated financial institution. Symplytics designed a centralized broker service that deploys directly into TradeStation\'s existing production EKS cluster (n8n.ai.tradestation.io), colocated alongside the existing n8n editor, workers, and webhook handlers — zero new infrastructure footprint.',
+    cards: ['broker'], arrows: [], hlClass: 'hl',
+    brokerStep: 0
+  },
+  {
+    title: 'n8n Workflows — Zero Credentials',
+    txt: 'Inside the EKS cluster, four n8n workflows handle different domains: Slack for per-department automation, ServiceNow for incidents and tickets, Jira for project automation, and SharePoint for document flows. None of these workflows hold any credentials — they present only a short-lived JSON Web Token with each request. No keys. No passwords. No static secrets of any kind.',
+    cards: ['wf-slack','wf-snow','wf-jira','wf-sp','no-creds'],
+    arrows: ['e-wf-slack','e-wf-snow','e-wf-jira','e-wf-sp'],
+    hlClass: 'hl-violet', brokerStep: 0
+  },
+  {
+    title: 'JWT Validation via JWKS',
+    txt: 'The Credential Broker immediately validates the token signature against a live JWKS endpoint. Microsoft Entra ID validates tokens for SharePoint and Exchange — AWS Cognito validates tokens for Slack, ServiceNow, and Jira. Both use RSA-256 signatures. An expired or tampered token is rejected here, before any secret is ever touched.',
+    cards: ['entra','cog','broker'],
+    arrows: ['e-entra','e-cog'],
+    hlClass: 'hl', brokerStep: 1
+  },
+  {
+    title: 'Permission Check — PostgreSQL ACL',
+    txt: 'After identity is confirmed, the broker queries the ACL permission table stored in TradeStation\'s existing Amazon RDS PostgreSQL instance — no new database infrastructure required. Every Entra group is mapped to which target systems it can reach, which HTTP methods it may use, and which endpoints are explicitly allowed. This is zero-trust enforcement — deny by default. Even a perfectly valid JWT cannot call any endpoint unless that combination has an explicit allow entry.',
+    cards: ['dynamo','broker'],
+    arrows: ['e-bk-dyn'],
+    hlClass: 'hl-purple', brokerStep: 2
+  },
+  {
+    title: 'Runtime Secret Fetch via IRSA',
+    txt: 'Only after identity and permissions are verified does the broker retrieve the actual credential from AWS Secrets Manager. Access uses IRSA — IAM Roles for Service Accounts — binding a pod-level IAM role with no static keys anywhere in the system. Secrets mount to a tmpfs volume via CSI Driver and ASCP. They never touch persistent disk and are never visible to the workflow.',
+    cards: ['secrets','broker'],
+    arrows: ['e-bk-sec'],
+    hlClass: 'hl-warm', brokerStep: 3
+  },
+  {
+    title: 'Execute Downstream API Call',
+    txt: 'With a validated identity, an authorised permission set, and a runtime-fetched credential, the broker executes the API call on behalf of the workflow. Slack receives per-department scoped bot tokens. ServiceNow connects via OAuth 2.0 Client Credentials. Jira uses OAuth 2.0 three-legged flow. SharePoint uses Sites.Selected scope. The n8n workflow never sees the credential — it only receives the result.',
+    cards: ['broker','t-slack','t-snow','t-jira','t-sp'],
+    arrows: ['e-bk-tslack','e-bk-tsnow','e-bk-tjira','e-bk-tsp'],
+    hlClass: 'hl-green', brokerStep: 4
+  },
+  {
+    title: 'WORM Audit Record — S3 Object Lock',
+    txt: 'Every single brokered API call generates a structured JSON audit record written to S3 with Object Lock in Compliance mode — write-once, read-many, and tamper-proof. Each record includes the caller identity from the JWT, a SHA-256 hash of the full request payload, and a W3C traceparent header for end-to-end distributed tracing. This satisfies SEC Rule 17a-4(f) and FINRA Rule 4511 for financial-grade electronic record retention.',
+    cards: ['s3','broker'],
+    arrows: ['e-bk-s3'],
+    hlClass: 'hl-green', brokerStep: 5
+  },
+  {
+    title: 'Automatic 401 — Key Rotation',
+    txt: 'If a downstream API returns 401 Unauthorized, the broker automatically invalidates its cached secret and retries using the AWSPENDING version from Secrets Manager. This transparent rotation means that during an active key rotation, workflows continue running with zero downtime and zero manual intervention. The staging label strategy decouples secret rotation from workflow availability entirely.',
+    cards: ['secrets','t-slack','t-snow','t-jira','t-sp'],
+    arrows: ['e-bk-sec','e-bk-tslack','e-bk-tsnow','e-bk-tjira','e-bk-tsp'],
+    hlClass: 'hl-warm', brokerStep: 3
+  },
+  {
+    title: '5-Day Proof of Concept — EKS + Helm',
+    txt: 'Symplytics delivers a working proof of concept in five days. The broker service deploys to TradeStation\'s existing production EKS cluster via Helm chart with namespace isolation — alongside the existing n8n editor, workers, and webhook handlers. Phase one validates the complete broker pattern using the Slack per-department use case: JWT issuance via Cognito, permission check via PostgreSQL ACL table (existing RDS), secret fetch from Secrets Manager, Slack API execution, and audit log write to S3 Object Lock. Phase two expands to ServiceNow and Jira.',
+    cards: ['broker','wf-slack','t-slack','secrets','dynamo','s3'],
+    arrows: ['e-wf-slack','e-bk-sec','e-bk-dyn','e-bk-s3','e-bk-tslack'],
+    hlClass: 'hl', brokerStep: 0
+  }
 ];
 
 const ALL_CARDS  = ['entra','cog','wf-slack','wf-snow','wf-jira','wf-sp','broker','secrets','dynamo','s3','t-slack','t-snow','t-jira','t-sp'];
@@ -324,6 +381,7 @@ const ALL_BS     = ['bs1','bs2','bs3','bs4','bs5'];
 
 let step = -1, playing = false, aud = null;
 
+/* Build dots */
 const dotsEl = document.getElementById('dots');
 STEPS.forEach((_,i) => {
   const d = document.createElement('div');
@@ -333,6 +391,7 @@ STEPS.forEach((_,i) => {
   dotsEl.appendChild(d);
 });
 
+/* Responsive scale — fill full width, origin top-left */
 function scale() {
   const cw    = document.getElementById('cw');
   const outer = document.getElementById('outer');
@@ -345,14 +404,17 @@ function scale() {
 window.addEventListener('resize', scale);
 scale();
 
+/* Playback speed */
 let playbackRate = 1;
 function setSpeed(v) {
   playbackRate = parseFloat(v);
   if (aud) aud.playbackRate = playbackRate;
 }
 
+/* vpulse (no-op if element absent) */
 function vpOn(on) { const el = document.getElementById('vpulse'); if (el) el.classList.toggle('on', on); }
 
+/* Clear all visual state */
 function clearAll() {
   ALL_CARDS.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('dim', ...HLC); });
   ALL_EXTRA.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('dim', ...HLC); });
@@ -360,18 +422,22 @@ function clearAll() {
   ALL_BS.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('lit'); });
 }
 
+/* Apply a step */
 function applyStep(i) {
   clearAll();
   const s = STEPS[i];
   const activeSet = new Set(s.cards);
+
   ALL_CARDS.forEach(id => { const el = document.getElementById(id); if (el && !activeSet.has(id)) el.classList.add('dim'); });
   ALL_EXTRA.forEach(id => { const el = document.getElementById(id); if (el && !activeSet.has(id)) el.classList.add('dim'); });
   s.cards.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add(s.hlClass || 'hl'); });
   s.arrows.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('act'); });
   if (s.brokerStep > 0) document.getElementById('bs' + s.brokerStep).classList.add('lit');
+
   document.querySelectorAll('.dot').forEach((d, idx) => {
     d.className = 'dot' + (idx === i ? ' act' : (idx < i ? ' done' : ''));
   });
+
   document.getElementById('sp-name').textContent = 'Step ' + (i+1) + ' of ' + STEPS.length + '  —  ' + s.title;
   document.getElementById('sp-text').textContent = s.txt;
   document.getElementById('sp').classList.remove('hidden');
@@ -381,10 +447,12 @@ function applyStep(i) {
   document.getElementById('btn-reset').style.display = 'inline-flex';
 }
 
+/* Play a step with pre-generated audio */
 function playStep(i) {
   if (i >= STEPS.length) { playing = false; setBtnState('done'); return; }
   applyStep(i);
   if (aud) { aud.pause(); aud = null; }
+
   aud = new Audio(AUDIO_URLS[i]);
   aud.playbackRate = playbackRate;
   aud.onended = () => {
@@ -394,6 +462,7 @@ function playStep(i) {
   };
   aud.onerror = () => {
     vpOn(false);
+    // fallback: auto-advance after reading time
     const ms = Math.min(12000, STEPS[i].txt.length * 55);
     if (playing) setTimeout(() => { if (playing) playStep(step + 1); }, ms);
   };
@@ -404,12 +473,12 @@ function playStep(i) {
 
 function setBtnState(s) {
   const btn = document.getElementById('btn-play');
-  if (s === 'playing')   { btn.textContent = 'Pause';   btn.disabled = false; btn.onclick = pauseWT; }
-  else if (s === 'done') { btn.textContent = 'Replay';  btn.disabled = false; btn.onclick = startWT; }
-  else if (s === 'paused'){ btn.textContent = 'Resume'; btn.disabled = false; btn.onclick = resumeWT; }
+  if (s === 'playing')  { btn.textContent = 'Pause';    btn.disabled = false; btn.onclick = pauseWT; }
+  else if (s === 'done') { btn.textContent = 'Replay';   btn.disabled = false; btn.onclick = startWT; }
+  else if (s === 'paused') { btn.textContent = 'Resume'; btn.disabled = false; btn.onclick = resumeWT; }
 }
 
-function startWT()  { playing = true; playStep(0); }
+function startWT()  { playing = true;  playStep(0); }
 function pauseWT()  { if (aud && !aud.paused) { aud.pause(); vpOn(false); } playing = false; setBtnState('paused'); }
 function resumeWT() { if (aud && aud.paused) { playing = true; aud.play(); vpOn(true); setBtnState('playing'); } else if (step >= 0) { playing = true; playStep(step); } }
 function go(dir)    { if (aud) { aud.pause(); aud = null; vpOn(false); } playing = true; playStep(step + dir); }
@@ -430,6 +499,7 @@ function resetWT() {
   btn.onclick = startWT;
 }
 
+/* Keyboard nav */
 document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); if (step < STEPS.length - 1) go(1); }
   if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); if (step > 0) go(-1); }
